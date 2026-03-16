@@ -1,0 +1,42 @@
+@model Beneficiary
+
+@{
+    ViewData["Title"] = Model.IsVerified ? "Set organization unverified" : "Approve organization";
+    var returnUrl = ViewBag.ReturnUrl as string;
+}
+
+<section class="content-shell narrow-shell">
+    <h1 class="mb-3">@(Model.IsVerified ? "Set organization unverified" : "Approve organization")</h1>
+
+    <article class="content-card mb-4">
+        <p class="lead">You are about to @(Model.IsVerified ? "change the verification of" : "approve") <strong>@Model.FullName</strong>.</p>
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Type</dt>
+            <dd class="col-sm-8">@Model.Kind</dd>
+            <dt class="col-sm-4">Manager</dt>
+            <dd class="col-sm-8">@(Model.ManagerUser?.Email ?? "-")</dd>
+            <dt class="col-sm-4">City</dt>
+            <dd class="col-sm-8">@Model.City</dd>
+            <dt class="col-sm-4">About</dt>
+            <dd class="col-sm-8">@Model.FocusArea</dd>
+            <dt class="col-sm-4">Linked causes</dt>
+            <dd class="col-sm-8">@Model.FundingCampaigns.Count</dd>
+            <dt class="col-sm-4">Information</dt>
+            <dd class="col-sm-8">@Model.Story</dd>
+        </dl>
+    </article>
+
+    <form asp-action="Verify" method="post" class="d-flex gap-2">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" name="returnUrl" value="@returnUrl" />
+        <button type="submit" class="btn btn-primary">@(Model.IsVerified ? "Set unverified" : "Approve organization")</button>
+        @if (!string.IsNullOrWhiteSpace(returnUrl))
+        {
+            <a class="btn btn-outline-dark" href="@returnUrl">Cancel</a>
+        }
+        else
+        {
+            <a class="btn btn-outline-dark" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+        }
+    </form>
+</section>

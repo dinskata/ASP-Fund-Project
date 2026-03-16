@@ -1,0 +1,60 @@
+@model IEnumerable<Beneficiary>
+
+@{
+    ViewData["Title"] = "Beneficiaries";
+}
+
+<section class="content-shell">
+    <div class="section-heading">
+        <div>
+            <h1 class="mb-0">Beneficiaries</h1>
+        </div>
+        <div class="d-flex gap-2">
+            @if (User.Identity?.IsAuthenticated ?? false)
+            {
+                <a class="btn btn-primary" asp-action="RegisterOrganization">Register an organization</a>
+            }
+            <a class="btn btn-outline-dark" asp-controller="Campaigns" asp-action="Index">View campaigns</a>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        @foreach (var beneficiary in Model)
+        {
+            var totalRaised = beneficiary.FundingCampaigns.Sum(campaign => campaign.CurrentAmount);
+            var totalGoal = beneficiary.FundingCampaigns.Sum(campaign => campaign.GoalAmount);
+            var overallProgress = totalGoal == 0 ? 0 : Math.Min(100, (totalRaised / totalGoal) * 100);
+            var isVerified = beneficiary.IsVerified;
+
+            <div class="col-lg-4">
+                <article class="content-card h-100">
+                    <h2 class="h4">@beneficiary.FullName</h2>
+                    <p class="small text-secondary mb-2">@beneficiary.Kind | @beneficiary.FocusArea | @beneficiary.City</p>
+                    <div class="mb-3">
+                        <span class="badge rounded-pill @(isVerified ? "text-bg-success" : "text-bg-secondary")">
+                            @(isVerified ? "Verified" : "Unverified")
+                        </span>
+                    </div>
+                    <p>@beneficiary.Story</p>
+                    <div class="progress mb-2" role="progressbar" aria-label="Beneficiary campaign progress" aria-valuenow="@overallProgress" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar" style="width: @CurrencyFormatter.Percent(overallProgress)"></div>
+                    </div>
+                    <div class="small text-secondary mb-3">
+                        @CurrencyFormatter.Euro(totalRaised) raised across @beneficiary.FundingCampaigns.Count campaign(s)
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="badge rounded-pill text-bg-light border">@beneficiary.FundingCampaigns.Count active campaigns</span>
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-sm btn-dark" asp-action="Details" asp-route-id="@beneficiary.Id">Details</a>
+                            @if ((User.Identity?.IsAuthenticated ?? false) &&
+                                (User.IsInRole(ApplicationRoles.Administrator) || beneficiary.ManagerUserId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value))
+                            {
+                                <a class="btn btn-sm btn-outline-dark" asp-action="Edit" asp-route-id="@beneficiary.Id">Edit</a>
+                            }
+                        </div>
+                    </div>
+                </article>
+            </div>
+        }
+    </div>
+</section>

@@ -1,0 +1,11 @@
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+}
+
+<nav class="content-card profile-nav mb-4">
+    <a class="@(currentAction == "Settings" ? "active" : string.Empty)" asp-controller="Profile" asp-action="Settings">Profile settings</a>
+    <a class="@(currentAction == "Organizations" ? "active" : string.Empty)" asp-controller="Profile" asp-action="Organizations">Organizations</a>
+    <a class="@(currentAction == "Causes" ? "active" : string.Empty)" asp-controller="Profile" asp-action="Causes">Causes</a>
+    <a class="@(currentAction == "MyDonations" ? "active" : string.Empty)" asp-controller="Profile" asp-action="MyDonations">My donations</a>
+    <a class="@(currentAction == "Financial" ? "active" : string.Empty)" asp-controller="Profile" asp-action="Financial">Financial</a>
+</nav>

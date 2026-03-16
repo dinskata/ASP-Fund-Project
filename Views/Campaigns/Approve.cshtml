@@ -1,0 +1,42 @@
+@model FundingCampaign
+
+@{
+    ViewData["Title"] = "Approve cause";
+    var returnUrl = ViewBag.ReturnUrl as string;
+}
+
+<section class="content-shell narrow-shell">
+    <h1 class="mb-3">Approve cause</h1>
+
+    <article class="content-card mb-4">
+        <p class="lead">You are about to approve <strong>@Model.Title</strong>.</p>
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Organizer</dt>
+            <dd class="col-sm-8">@Model.OrganizerName</dd>
+            <dt class="col-sm-4">Owner</dt>
+            <dd class="col-sm-8">@Model.Owner?.FullName</dd>
+            <dt class="col-sm-4">Beneficiary</dt>
+            <dd class="col-sm-8">@Model.Beneficiary?.FullName</dd>
+            <dt class="col-sm-4">Category</dt>
+            <dd class="col-sm-8">@Model.Category</dd>
+            <dt class="col-sm-4">Goal</dt>
+            <dd class="col-sm-8">@CurrencyFormatter.Euro(Model.GoalAmount)</dd>
+            <dt class="col-sm-4">Summary</dt>
+            <dd class="col-sm-8">@Model.Summary</dd>
+        </dl>
+    </article>
+
+    <form asp-action="Approve" method="post" class="d-flex gap-2">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" name="returnUrl" value="@returnUrl" />
+        <button type="submit" class="btn btn-primary">Approve cause</button>
+        @if (!string.IsNullOrWhiteSpace(returnUrl))
+        {
+            <a class="btn btn-outline-dark" href="@returnUrl">Cancel</a>
+        }
+        else
+        {
+            <a class="btn btn-outline-dark" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+        }
+    </form>
+</section>

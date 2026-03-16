@@ -1,0 +1,95 @@
+@model Beneficiary
+
+@{
+    ViewData["Title"] = "Edit beneficiary";
+    var returnUrl = ViewBag.ReturnUrl as string;
+}
+
+<section class="content-shell narrow-shell">
+    <h1 class="mb-3">Edit beneficiary</h1>
+
+    <form asp-action="Edit" method="post" class="content-card">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" name="returnUrl" value="@returnUrl" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="FullName" class="form-label"></label>
+                <input asp-for="FullName" class="form-control" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+            @if (User.IsInRole(ApplicationRoles.Administrator))
+            {
+                <div class="col-md-6">
+                    <label asp-for="Kind" class="form-label"></label>
+                    <select asp-for="Kind" asp-items="Html.GetEnumSelectList<BeneficiaryKind>()" class="form-select"></select>
+                    <span asp-validation-for="Kind" class="text-danger"></span>
+                </div>
+            }
+            else
+            {
+                <input type="hidden" asp-for="Kind" />
+            }
+            <div class="col-md-6">
+                <label asp-for="FocusArea" class="form-label"></label>
+                <input asp-for="FocusArea" class="form-control" />
+                <span asp-validation-for="FocusArea" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="City" class="form-label"></label>
+                <input asp-for="City" class="form-control" />
+                <span asp-validation-for="City" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Story" class="form-label">More information</label>
+                <textarea asp-for="Story" rows="5" class="form-control"></textarea>
+                <span asp-validation-for="Story" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="BankAccountName" class="form-label"></label>
+                <input asp-for="BankAccountName" class="form-control" />
+                <span asp-validation-for="BankAccountName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="BankName" class="form-label"></label>
+                <input asp-for="BankName" class="form-control" />
+                <span asp-validation-for="BankName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Iban" class="form-label"></label>
+                <input asp-for="Iban" class="form-control text-uppercase" />
+                <span asp-validation-for="Iban" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Bic" class="form-label"></label>
+                <input asp-for="Bic" class="form-control text-uppercase" />
+                <span asp-validation-for="Bic" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Save changes</button>
+            @if (User.IsInRole(ApplicationRoles.Administrator))
+            {
+                <a asp-action="Verify" asp-route-id="@Model.Id" asp-route-returnUrl="@Url.Action("Edit", "Beneficiaries", new { id = Model.Id })" class="btn btn-outline-dark">
+                    @(Model.IsVerified ? "Set unverified" : "Verify beneficiary")
+                </a>
+            }
+            <input type="hidden" name="returnAction" value="Edit" />
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">Delete</a>
+            @if (!string.IsNullOrWhiteSpace(returnUrl))
+            {
+                <a href="@returnUrl" class="btn btn-outline-dark">Back</a>
+            }
+            else
+            {
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-dark">Back</a>
+            }
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

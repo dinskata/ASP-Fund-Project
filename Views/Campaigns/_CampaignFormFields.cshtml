@@ -1,0 +1,62 @@
+@model FundingCampaign
+@using System.Globalization
+
+<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="Title" class="form-label"></label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="OrganizerName" class="form-label"></label>
+        <input asp-for="OrganizerName" class="form-control" />
+        <span asp-validation-for="OrganizerName" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Category" class="form-label"></label>
+        <select asp-for="Category" class="form-select" asp-items="Html.GetEnumSelectList<CampaignCategory>()"></select>
+        <span asp-validation-for="Category" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="GoalAmount" class="form-label"></label>
+        <input asp-for="GoalAmount" class="form-control" type="text" inputmode="decimal" data-decimal-field value="@Model.GoalAmount.ToString("0.00", CultureInfo.InvariantCulture)" />
+        <span asp-validation-for="GoalAmount" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="CurrentAmount" class="form-label"></label>
+        <input asp-for="CurrentAmount" class="form-control" type="text" inputmode="decimal" data-decimal-field value="@Model.CurrentAmount.ToString("0.00", CultureInfo.InvariantCulture)" />
+        <span asp-validation-for="CurrentAmount" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="StartDate" class="form-label"></label>
+        <input asp-for="StartDate" class="form-control" />
+        <span asp-validation-for="StartDate" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="EndDate" class="form-label"></label>
+        <input asp-for="EndDate" class="form-control" />
+        <span asp-validation-for="EndDate" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Summary" class="form-label"></label>
+        <textarea asp-for="Summary" class="form-control" rows="5"></textarea>
+        <span asp-validation-for="Summary" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="BeneficiaryId" class="form-label"></label>
+        <select asp-for="BeneficiaryId" class="form-select" asp-items="ViewBag.BeneficiaryId"></select>
+        <span asp-validation-for="BeneficiaryId" class="text-danger"></span>
+    </div>
+</div>
+
+@if (User.IsInRole(ApplicationRoles.Administrator))
+{
+    <div class="mt-4">
+        <div class="form-check">
+            <input asp-for="IsFeatured" class="form-check-input" />
+            <label asp-for="IsFeatured" class="form-check-label"></label>
+        </div>
+    </div>
+}

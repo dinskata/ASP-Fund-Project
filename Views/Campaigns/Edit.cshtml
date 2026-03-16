@@ -1,0 +1,104 @@
+@model FundingCampaign
+
+@{
+    ViewData["Title"] = "Edit campaign";
+    var returnUrl = ViewBag.ReturnUrl as string;
+}
+
+<section class="content-shell narrow-shell">
+    <h1 class="mb-3">Edit campaign</h1>
+
+    <form asp-action="Edit" method="post" class="content-card">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" name="returnUrl" value="@returnUrl" />
+        @if (User.IsInRole(ApplicationRoles.Administrator))
+        {
+            <div class="alert alert-light border mb-4">
+                <div class="d-flex flex-wrap gap-2">
+                    <div class="form-check me-2">
+                        <input asp-for="IsApproved" class="form-check-input" />
+                        <label asp-for="IsApproved" class="form-check-label"></label>
+                    </div>
+                    @if (!Model.IsApproved)
+                    {
+                        <a class="btn btn-sm btn-primary" asp-action="Approve" asp-route-id="@Model.Id" asp-route-returnUrl="@Url.Action("Edit", "Campaigns", new { id = Model.Id })">Approve cause</a>
+                    }
+                    @if (Model.Beneficiary is not null)
+                    {
+                        <a class="btn btn-sm btn-outline-dark" asp-controller="Beneficiaries" asp-action="Verify" asp-route-id="@Model.BeneficiaryId" asp-route-returnUrl="@Url.Action("Edit", "Campaigns", new { id = Model.Id })">
+                            @(Model.Beneficiary.IsVerified ? "Set organization unverified" : "Approve organization")
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+        <partial name="_CampaignFormFields" model="Model" />
+
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Save changes</button>
+            @if (!string.IsNullOrWhiteSpace(returnUrl))
+            {
+                <a class="btn btn-outline-dark" href="@returnUrl">Back</a>
+            }
+            else
+            {
+                <a class="btn btn-outline-dark" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+            }
+            <a class="btn btn-outline-danger" asp-action="Delete" asp-route-id="@Model.Id">Delete</a>
+        </div>
+    </form>
+
+    @if (User.IsInRole(ApplicationRoles.Administrator) && Model.Contributions.Any())
+    {
+        <section class="content-card mt-4">
+            <h2 class="h5 mb-3">Donation comments</h2>
+            <div class="list-group list-group-flush">
+                @foreach (var contribution in Model.Contributions)
+                {
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between gap-3">
+                            <div>
+                                <div class="fw-semibold">@contribution.DonorName</div>
+                                <div class="small text-secondary">@CurrencyFormatter.Euro(contribution.Amount) on @DateFormatter.EnglishShort(contribution.DonatedOn)</div>
+                                <div class="small text-secondary">@contribution.Frequency</div>
+                                <div class="mt-1">
+                                    @if (string.IsNullOrWhiteSpace(contribution.Note))
+                                    {
+                                        <span class="text-secondary">No comment.</span>
+                                    }
+                                    else if (contribution.IsCommentHidden)
+                                    {
+                                        <span class="text-secondary">Hidden on public pages:</span>
+                                        <div>@contribution.Note</div>
+                                    }
+                                    else
+                                    {
+                                        @contribution.Note
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-column gap-2">
+                                @if (!string.IsNullOrWhiteSpace(contribution.Note))
+                                {
+                                    <form asp-action="ToggleCommentVisibility" method="post">
+                                        <input type="hidden" name="id" value="@Model.Id" />
+                                        <input type="hidden" name="contributionId" value="@contribution.Id" />
+                                        <button type="submit" class="btn btn-sm @(contribution.IsCommentHidden ? "btn-outline-dark" : "btn-outline-danger")">
+                                            @(contribution.IsCommentHidden ? "Show comment" : "Hide comment")
+                                        </button>
+                                    </form>
+                                }
+                                <span class="small text-secondary">@(contribution.IsDonationHidden ? "Donation hidden" : "Donation visible")</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -16,4 +16,15 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.6" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="objverify\**\*.cs" />
+    <EmbeddedResource Remove="objverify\**\*" />
+    <None Remove="objverify\**\*" />
+    <Content Remove="objverify\**\*" />
+    <Compile Remove="binverify\**\*.cs" />
+    <EmbeddedResource Remove="binverify\**\*" />
+    <None Remove="binverify\**\*" />
+    <Content Remove="binverify\**\*" />
+  </ItemGroup>
+
 </Project>

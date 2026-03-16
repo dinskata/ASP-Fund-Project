@@ -1,0 +1,48 @@
+@model Beneficiary
+
+@{
+    ViewData["Title"] = "Delete organization";
+}
+
+<section class="content-shell narrow-shell">
+    <h1 class="mb-3">Delete organization</h1>
+
+    <article class="content-card mb-4">
+        <p class="lead">Are you sure you want to delete <strong>@Model.FullName</strong>?</p>
+        <dl class="row mb-4">
+            <dt class="col-sm-4">Type</dt>
+            <dd class="col-sm-8">@Model.Kind</dd>
+            <dt class="col-sm-4">City</dt>
+            <dd class="col-sm-8">@Model.City</dd>
+            <dt class="col-sm-4">About</dt>
+            <dd class="col-sm-8">@Model.FocusArea</dd>
+            <dt class="col-sm-4">Linked causes</dt>
+            <dd class="col-sm-8">@Model.FundingCampaigns.Count</dd>
+        </dl>
+        @if (ViewBag.HasCampaigns as bool? == true)
+        {
+            <p class="mb-0 text-secondary">
+                This organization cannot be deleted while campaigns are still linked to it. Delete the campaigns first.
+            </p>
+        }
+        else
+        {
+            <p class="mb-0 text-secondary">
+                This will permanently remove the organization record.
+            </p>
+        }
+    </article>
+
+    <form asp-action="Delete" method="post" class="d-flex gap-2">
+        <input type="hidden" asp-for="Id" />
+        @if (ViewBag.HasCampaigns as bool? == true)
+        {
+            <button type="submit" class="btn btn-danger" disabled>Delete</button>
+        }
+        else
+        {
+            <button type="submit" class="btn btn-danger">Delete organization</button>
+        }
+        <a class="btn btn-outline-dark" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+    </form>
+</section>

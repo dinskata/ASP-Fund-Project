@@ -1,0 +1,44 @@
+@model ApplicationUser
+
+@{
+    ViewData["Title"] = "Delete user";
+}
+
+<section class="content-shell narrow-shell">
+    <h1 class="mb-3">Delete user</h1>
+
+    <article class="content-card mb-4">
+        <p class="lead">Are you sure you want to delete <strong>@Model.Email</strong>?</p>
+        @if (ViewBag.IsSelfDelete as bool? == true)
+        {
+            <p class="mb-0 text-secondary">You cannot delete the currently signed-in admin account.</p>
+        }
+        else if (ViewBag.HasCreatedCampaigns as bool? == true)
+        {
+            <p class="mb-0 text-secondary">This user still owns campaigns and cannot be deleted yet.</p>
+        }
+        else if (ViewBag.HasManagedBeneficiaries as bool? == true)
+        {
+            <p class="mb-0 text-secondary">This user still manages organizations and cannot be deleted yet.</p>
+        }
+        else
+        {
+            <p class="mb-0 text-secondary">
+                This will permanently remove the user account. Donation history linked by user account may no longer appear in the profile area.
+            </p>
+        }
+    </article>
+
+    <form asp-action="DeleteUser" method="post" class="d-flex gap-2">
+        <input type="hidden" name="id" value="@Model.Id" />
+        @if ((ViewBag.IsSelfDelete as bool? == true) || (ViewBag.HasCreatedCampaigns as bool? == true) || (ViewBag.HasManagedBeneficiaries as bool? == true))
+        {
+            <button type="submit" class="btn btn-danger" disabled>Delete user</button>
+        }
+        else
+        {
+            <button type="submit" class="btn btn-danger">Delete user</button>
+        }
+        <a class="btn btn-outline-dark" asp-action="EditUser" asp-route-id="@Model.Id">Cancel</a>
+    </form>
+</section>

@@ -1,0 +1,44 @@
+@model FundingCampaign
+
+@{
+    ViewData["Title"] = "Delete campaign";
+}
+
+<section class="content-shell narrow-shell">
+    <h1 class="mb-3">Remove campaign</h1>
+
+    <article class="content-card mb-4">
+        <dl class="row mb-4">
+            <dt class="col-sm-4">Beneficiary</dt>
+            <dd class="col-sm-8">@Model.Beneficiary?.FullName</dd>
+            <dt class="col-sm-4">Organizer</dt>
+            <dd class="col-sm-8">@Model.OrganizerName</dd>
+            <dt class="col-sm-4">Goal</dt>
+            <dd class="col-sm-8">@CurrencyFormatter.Euro(Model.GoalAmount)</dd>
+            <dt class="col-sm-4">Raised</dt>
+            <dd class="col-sm-8">@CurrencyFormatter.Euro(Model.CurrentAmount)</dd>
+            <dt class="col-sm-4">Status</dt>
+            <dd class="col-sm-8">@(Model.IsApproved ? "Approved" : "Waiting for approval")</dd>
+        </dl>
+        @if (ViewBag.HasDonations as bool? == true)
+        {
+            <p class="lead">This campaign already has donations.</p>
+            <p class="mb-0 text-secondary">
+                You can request deletion. The campaign will be hidden until an administrator reviews it.
+            </p>
+        }
+        else
+        {
+            <p class="lead">Are you sure you want to delete <strong>@Model.Title</strong>?</p>
+            <p class="mb-0 text-secondary">
+                This campaign has no donations, so it can be deleted right away.
+            </p>
+        }
+    </article>
+
+    <form asp-action="Delete" method="post" class="d-flex gap-2">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">@((ViewBag.HasDonations as bool? == true) ? "Request deletion" : "Delete permanently")</button>
+        <a class="btn btn-outline-dark" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+    </form>
+</section>

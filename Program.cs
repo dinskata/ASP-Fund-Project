@@ -1,5 +1,9 @@
 using ASP_Fund_Project.Data;
+using ASP_Fund_Project.Models;
+using ASP_Fund_Project.Services;
+using System.Globalization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,10 +13,19 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+builder.Services.AddScoped<IFundingCampaignService, FundingCampaignService>();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddControllersWithViews();
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCulture = new CultureInfo("en-GB");
+    options.DefaultRequestCulture = new RequestCulture(supportedCulture);
+    options.SupportedCultures = [supportedCulture];
+    options.SupportedUICultures = [supportedCulture];
+});
 
 var app = builder.Build();
 
@@ -29,8 +42,10 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseRequestLocalization();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
@@ -42,5 +57,7 @@ app.MapControllerRoute(
 
 app.MapRazorPages()
    .WithStaticAssets();
+
+await ApplicationDbInitializer.SeedAsync(app.Services);
 
 app.Run();

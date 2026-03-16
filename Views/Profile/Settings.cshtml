@@ -1,0 +1,114 @@
+@model EditProfileViewModel
+
+@{
+    ViewData["Title"] = "Profile settings";
+}
+
+<section class="content-shell narrow-shell">
+    <h1 class="mb-3">Profile settings</h1>
+    <partial name="_ProfileNav" />
+
+    <form asp-action="Settings" method="post" class="content-card">
+        <input asp-for="Id" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="FullName" class="form-label"></label>
+                <input asp-for="FullName" class="form-control" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="PhoneNumber" class="form-label"></label>
+                <input asp-for="PhoneNumber" class="form-control" />
+                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+            </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="CurrentPassword" class="form-label"></label>
+                <div class="password-field">
+                    <input asp-for="CurrentPassword" class="form-control password-input" autocomplete="current-password" />
+                    <button class="password-toggle" type="button" data-password-toggle aria-label="Show password">Show</button>
+                </div>
+                <span asp-validation-for="CurrentPassword" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="NewPassword" class="form-label"></label>
+                <div class="password-field">
+                    <input asp-for="NewPassword" class="form-control password-input" autocomplete="new-password" />
+                    <button class="password-toggle" type="button" data-password-toggle aria-label="Show password">Show</button>
+                </div>
+                <span asp-validation-for="NewPassword" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="ConfirmNewPassword" class="form-label"></label>
+                <div class="password-field">
+                    <input asp-for="ConfirmNewPassword" class="form-control password-input" autocomplete="new-password" />
+                    <button class="password-toggle" type="button" data-password-toggle aria-label="Show password">Show</button>
+                </div>
+                <span asp-validation-for="ConfirmNewPassword" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Save profile</button>
+            <a class="btn btn-outline-dark" asp-controller="Beneficiaries" asp-action="RegisterOrganization">Add organization</a>
+            <a class="btn btn-outline-dark" asp-controller="Campaigns" asp-action="Create">Add cause</a>
+            <a class="btn btn-outline-dark" asp-controller="Home" asp-action="Index">Back</a>
+        </div>
+    </form>
+
+    <section class="content-card mt-4">
+        <h2 class="h5 mb-3">Quick filters</h2>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <form method="get" asp-action="Organizations">
+                    <label class="form-label" for="organizationSearch">Find organization</label>
+                    <div class="d-flex gap-2">
+                        <input class="form-control" id="organizationSearch" name="search" placeholder="Search organizations" />
+                        <button type="submit" class="btn btn-outline-dark">Open</button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-6">
+                <form method="get" asp-action="Causes">
+                    <label class="form-label" for="causeSearch">Find cause</label>
+                    <div class="d-flex gap-2">
+                        <input class="form-control" id="causeSearch" name="search" placeholder="Search causes" />
+                        <button type="submit" class="btn btn-outline-dark">Open</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.querySelectorAll("[data-password-toggle]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                var wrapper = button.closest(".password-field");
+                var input = wrapper ? wrapper.querySelector(".password-input") : null;
+
+                if (!input) {
+                    return;
+                }
+
+                var isPassword = input.type === "password";
+                input.type = isPassword ? "text" : "password";
+                button.setAttribute("aria-label", isPassword ? "Hide password" : "Show password");
+                button.textContent = isPassword ? "Hide" : "Show";
+            });
+        });
+    </script>
+}

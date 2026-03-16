@@ -1,0 +1,239 @@
+@model ProfileFinancialViewModel
+
+@{
+    ViewData["Title"] = "Financial";
+}
+
+<section class="content-shell">
+    <h1 class="mb-3">@(Model.IsAdmin ? "Site financial data" : "My cause financial data")</h1>
+    <partial name="_ProfileNav" />
+
+    <form method="get" class="content-card mb-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label" for="dateRange">Date</label>
+                <select class="form-select" id="dateRange" name="dateRange">
+                    <option value="lifetime" selected="@(Model.DateRange == "lifetime")">Lifetime</option>
+                    <option value="last30days" selected="@(Model.DateRange == "last30days")">Last 30 days</option>
+                    <option value="thisyear" selected="@(Model.DateRange == "thisyear")">This year</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="category">Category</label>
+                <select class="form-select" id="category" name="category">
+                    <option value="">All categories</option>
+                    @foreach (var item in Html.GetEnumSelectList<CampaignCategory>())
+                    {
+                        if (item.Value == ((int?)Model.Category)?.ToString())
+                        {
+                            <option value="@item.Value" selected>@item.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="frequency">Donation type</label>
+                <select class="form-select" id="frequency" name="frequency">
+                    <option value="">All types</option>
+                    @foreach (var item in Html.GetEnumSelectList<ContributionFrequency>())
+                    {
+                        if (item.Value == ((int?)Model.Frequency)?.ToString())
+                        {
+                            <option value="@item.Value" selected>@item.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="status">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="successful" selected="@(Model.StatusFilter == "successful")">Successful only</option>
+                    <option value="all" selected="@(Model.StatusFilter == "all")">All statuses</option>
+                    <option value="unsuccessful" selected="@(Model.StatusFilter == "unsuccessful")">Unsuccessful only</option>
+                    <option value="pending" selected="@(Model.StatusFilter == "pending")">Pending only</option>
+                    <option value="cancelled" selected="@(Model.StatusFilter == "cancelled")">Cancelled only</option>
+                </select>
+            </div>
+        </div>
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Apply filters</button>
+            <a class="btn btn-outline-dark" asp-action="Financial">Clear</a>
+        </div>
+    </form>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <article class="content-card h-100">
+                <span class="impact-label">Total raised</span>
+                <strong class="dashboard-number">@CurrencyFormatter.Euro(Model.TotalRaised)</strong>
+            </article>
+        </div>
+        <div class="col-md-4">
+            <article class="content-card h-100">
+                <span class="impact-label">Donations counted</span>
+                <strong class="dashboard-number">@Model.TotalDonations</strong>
+            </article>
+        </div>
+        <div class="col-md-4">
+            <article class="content-card h-100">
+                <span class="impact-label">Average donation</span>
+                <strong class="dashboard-number">@CurrencyFormatter.Euro(Model.AverageDonation)</strong>
+            </article>
+        </div>
+    </div>
+
+    <section class="content-card">
+        <h2 class="h5 mb-3">Stats by cause</h2>
+        @if (Model.Causes.Any())
+        {
+            <div class="table-responsive admin-table">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Cause</th>
+                            <th>Beneficiary</th>
+                            <th>Category</th>
+                            <th>Raised</th>
+                            <th>Donations</th>
+                            <th>Average</th>
+                            <th>Latest</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var cause in Model.Causes)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-controller="Campaigns" asp-action="Details" asp-route-id="@cause.CampaignId">@cause.CampaignTitle</a>
+                                </td>
+                                <td>@cause.BeneficiaryName</td>
+                                <td>@cause.Category</td>
+                                <td>@CurrencyFormatter.Euro(cause.RaisedAmount)</td>
+                                <td>@cause.DonationCount</td>
+                                <td>@CurrencyFormatter.Euro(cause.AverageDonation)</td>
+                                <td>@(cause.LastDonationOn.HasValue ? DateFormatter.EnglishShort(cause.LastDonationOn.Value) : "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="mb-0">No financial data found for the selected filters.</p>
+        }
+    </section>
+
+    <section class="content-card mt-4">
+        <h2 class="h5 mb-3">Active weekly and monthly donations</h2>
+        @if (Model.ActiveRecurringDonations.Any())
+        {
+            <div class="table-responsive admin-table">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Cause</th>
+                            <th>Donor</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Latest payment</th>
+                            <th>Visibility</th>
+                            @if (Model.IsAdmin)
+                            {
+                                <th>Action</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var donation in Model.ActiveRecurringDonations)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-controller="Campaigns" asp-action="Details" asp-route-id="@donation.CampaignId">@donation.CampaignTitle</a>
+                                </td>
+                                <td>@donation.DonorName</td>
+                                <td>@donation.Frequency</td>
+                                <td>@CurrencyFormatter.Euro(donation.Amount)</td>
+                                <td>@DateFormatter.EnglishShort(donation.DonatedOn)</td>
+                                <td>@(donation.IsHiddenDonation ? "Hidden" : "Visible")</td>
+                                @if (Model.IsAdmin)
+                                {
+                                    <td>
+                                        <form asp-action="CancelRecurringDonation" method="post">
+                                            <input type="hidden" name="id" value="@donation.ContributionId" />
+                                            <input type="hidden" name="dateRange" value="@Model.DateRange" />
+                                            <input type="hidden" name="status" value="@Model.StatusFilter" />
+                                            @if (Model.Category.HasValue)
+                                            {
+                                                <input type="hidden" name="category" value="@((int)Model.Category.Value)" />
+                                            }
+                                            @if (Model.Frequency.HasValue)
+                                            {
+                                                <input type="hidden" name="frequency" value="@((int)Model.Frequency.Value)" />
+                                            }
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Cancel recurring</button>
+                                        </form>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="mb-0">No active weekly or monthly donations found.</p>
+        }
+    </section>
+
+    <section class="content-card mt-4">
+        <h2 class="h5 mb-3">Past donations to these causes</h2>
+        @if (Model.PastDonations.Any())
+        {
+            <div class="table-responsive admin-table">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Cause</th>
+                            <th>Donor</th>
+                            <th>Amount</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Visibility</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var donation in Model.PastDonations)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-controller="Campaigns" asp-action="Details" asp-route-id="@donation.CampaignId">@donation.CampaignTitle</a>
+                                </td>
+                                <td>@donation.DonorName</td>
+                                <td>@CurrencyFormatter.Euro(donation.Amount)</td>
+                                <td>@donation.Frequency</td>
+                                <td>@donation.Status</td>
+                                <td>@DateFormatter.EnglishShort(donation.DonatedOn)</td>
+                                <td>@(donation.IsHiddenDonation ? "Hidden" : "Visible")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="mb-0">No past donations found for the selected filters.</p>
+        }
+    </section>
+</section>

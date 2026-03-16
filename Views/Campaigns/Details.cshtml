@@ -1,0 +1,192 @@
+@model FundingCampaign
+
+@{
+    ViewData["Title"] = "Campaign details";
+    var progress = Model.GoalAmount == 0 ? 0 : Math.Min(100, (Model.CurrentAmount / Model.GoalAmount) * 100);
+    var returnUrl = ViewBag.ReturnUrl as string;
+    var canSeeHiddenDonations = User.IsInRole(ApplicationRoles.Administrator) ||
+        Model.OwnerId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var visibleContributions = canSeeHiddenDonations
+        ? Model.Contributions
+        : Model.Contributions.Where(item => !item.IsDonationHidden);
+    var donationResult = TempData["DonationResult"] as string;
+    var donationId = TempData["DonationId"]?.ToString();
+}
+
+<section class="content-shell">
+    <div class="section-heading">
+        <div>
+            <h1 class="mb-0">@Model.Title</h1>
+        </div>
+        <div class="d-flex gap-2">
+            @if (User.IsInRole(ApplicationRoles.Administrator))
+            {
+                @if (!Model.IsApproved)
+                {
+                    <a class="btn btn-primary" asp-action="Approve" asp-route-id="@Model.Id" asp-route-returnUrl="@Url.Action("Details", "Campaigns", new { id = Model.Id })">Approve cause</a>
+                }
+                @if (Model.Beneficiary is not null)
+                {
+                    <a class="btn btn-outline-dark" asp-controller="Beneficiaries" asp-action="Verify" asp-route-id="@Model.BeneficiaryId" asp-route-returnUrl="@Url.Action("Details", "Campaigns", new { id = Model.Id })">
+                        @(Model.Beneficiary.IsVerified ? "Set organization unverified" : "Approve organization")
+                    </a>
+                }
+            }
+            @if (Model.IsApproved)
+            {
+                <a class="btn btn-primary" asp-action="Donate" asp-route-id="@Model.Id">Donate</a>
+            }
+            @if (User.IsInRole(ApplicationRoles.Administrator) || Model.OwnerId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
+            {
+                <a class="btn btn-outline-dark" asp-action="Edit" asp-route-id="@Model.Id" asp-route-returnUrl="@returnUrl">Edit</a>
+                <a class="btn btn-outline-danger" asp-action="Delete" asp-route-id="@Model.Id">Delete</a>
+            }
+            @if (!string.IsNullOrWhiteSpace(returnUrl))
+            {
+                <a class="btn btn-outline-dark" href="@returnUrl">Back</a>
+            }
+            else
+            {
+                <a class="btn btn-outline-dark" asp-action="Index">Back to campaigns</a>
+            }
+        </div>
+    </div>
+
+    @if (!Model.IsApproved)
+    {
+        <div class="alert alert-warning mt-3">This campaign is waiting for admin approval and cannot receive donations yet.</div>
+    }
+
+    <div class="row g-4 mt-1">
+        <div class="col-lg-8">
+            <article class="content-card h-100">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="badge rounded-pill text-bg-warning">@Model.Category</span>
+                    @if (Model.IsFeatured)
+                    {
+                        <span class="badge rounded-pill text-bg-dark">Featured</span>
+                    }
+                    @if (!Model.IsApproved)
+                    {
+                        <span class="badge rounded-pill text-bg-secondary">Pending approval</span>
+                    }
+                    @if (Model.IsHidden)
+                    {
+                        <span class="badge rounded-pill text-bg-dark">Hidden</span>
+                    }
+                    @if (Model.IsDeletionRequested)
+                    {
+                        <span class="badge rounded-pill text-bg-danger">Deletion requested</span>
+                    }
+                </div>
+                <p class="lead">@Model.Summary</p>
+                <div class="progress mb-2" role="progressbar" aria-label="Campaign progress" aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar" style="width: @CurrencyFormatter.Percent(progress)"></div>
+                </div>
+                <div class="d-flex justify-content-between small text-secondary mb-4">
+                    <span>@CurrencyFormatter.Euro(Model.CurrentAmount) raised</span>
+                    <span>Goal @CurrencyFormatter.Euro(Model.GoalAmount)</span>
+                </div>
+
+                <h2 class="h5">Recent contributions</h2>
+                <div class="list-group list-group-flush">
+                    @foreach (var contribution in visibleContributions)
+                    {
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between">
+                                <strong>@contribution.DonorName</strong>
+                                <span>@CurrencyFormatter.Euro(contribution.Amount)</span>
+                            </div>
+                            <div class="small text-secondary">
+                                @contribution.Frequency
+                                @if (contribution.IsDonationHidden)
+                                {
+                                    <span> · Hidden donation</span>
+                                }
+                            </div>
+                            @if (contribution.Frequency == ContributionFrequency.OneTime &&
+                                !string.IsNullOrWhiteSpace(contribution.Note) &&
+                                !contribution.IsCommentHidden)
+                            {
+                                <div class="mt-1">@contribution.Note</div>
+                            }
+                        </div>
+                    }
+                </div>
+            </article>
+        </div>
+
+        <div class="col-lg-4">
+            <article class="content-card h-100">
+                <h2 class="h5">Campaign facts</h2>
+                <dl class="row mb-0">
+                    <dt class="col-5">Organizer</dt>
+                    <dd class="col-7">@Model.OrganizerName</dd>
+                    <dt class="col-5">Owner</dt>
+                    <dd class="col-7">@Model.Owner?.FullName</dd>
+                    <dt class="col-5">Beneficiary</dt>
+                    <dd class="col-7">
+                        <a asp-controller="Beneficiaries" asp-action="Details" asp-route-id="@Model.BeneficiaryId">
+                            @Model.Beneficiary?.FullName
+                        </a>
+                    </dd>
+                    <dt class="col-5">Start</dt>
+                    <dd class="col-7">@DateFormatter.EnglishShort(Model.StartDate)</dd>
+                    <dt class="col-5">End</dt>
+                    <dd class="col-7">@DateFormatter.EnglishShort(Model.EndDate)</dd>
+                    <dt class="col-5">Status</dt>
+                    <dd class="col-7">@(Model.IsApproved ? "Approved" : "Waiting for admin approval")</dd>
+                </dl>
+            </article>
+        </div>
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(donationResult))
+{
+    <div class="modal fade" id="donationResultModal" tabindex="-1" aria-labelledby="donationResultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content payment-modal">
+                <div class="modal-header border-0 pb-0">
+                    <h2 class="modal-title h4 mb-0" id="donationResultModalLabel">Donation result</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    @if (donationResult == "success")
+                    {
+                        <p class="mb-2">Successful donation.</p>
+                    }
+                    else
+                    {
+                        <p class="mb-2">Unsuccessful donation.</p>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(donationId))
+                    {
+                        <p class="mb-0">Donation ID: <strong>@donationId</strong></p>
+                    }
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @if (!string.IsNullOrWhiteSpace(donationResult))
+    {
+        <script>
+            (() => {
+                const modalElement = document.getElementById('donationResultModal');
+                if (!modalElement) {
+                    return;
+                }
+
+                const resultModal = new bootstrap.Modal(modalElement);
+                resultModal.show();
+            })();
+        </script>
+    }
+}

@@ -1,0 +1,47 @@
+@model IReadOnlyCollection<Contribution>
+
+@{
+    ViewData["Title"] = "My donations";
+}
+
+<section class="content-shell narrow-shell">
+    <h1 class="mb-3">My donations</h1>
+    <partial name="_ProfileNav" />
+
+    <section class="content-card">
+        @if (Model.Any())
+        {
+            <div class="list-group list-group-flush">
+                @foreach (var donation in Model)
+                {
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-semibold">@donation.FundingCampaign?.Title</div>
+                            <div class="small text-secondary">Donation ID: @donation.Id</div>
+                            <div class="small text-secondary">
+                                @CurrencyFormatter.Euro(donation.Amount) | @donation.Frequency | @DateFormatter.EnglishShort(donation.DonatedOn)
+                            </div>
+                            <div class="small text-secondary">
+                                @(donation.IsDonationHidden ? "Hidden donation" : "Visible donation")
+                                | @(donation.Status == ContributionStatus.Successful ? "Successful" : donation.Status.ToString())
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-sm btn-outline-dark" asp-controller="Campaigns" asp-action="Details" asp-route-id="@donation.FundingCampaignId">View</a>
+                            <form asp-action="ToggleDonationVisibility" method="post">
+                                <input type="hidden" name="id" value="@donation.Id" />
+                                <button type="submit" class="btn btn-sm @(donation.IsDonationHidden ? "btn-outline-dark" : "btn-outline-danger")">
+                                    @(donation.IsDonationHidden ? "Show" : "Hide")
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="mb-0">You have not made any logged-in donations yet.</p>
+        }
+    </section>
+</section>

@@ -1,0 +1,199 @@
+@model EditProfileViewModel
+
+@{
+    ViewData["Title"] = "My profile";
+    var totalDonated = Model.MyDonations
+        .Where(donation => donation.Status == ContributionStatus.Successful)
+        .Sum(donation => donation.Amount);
+    var totalRaised = Model.MyCauses.Sum(cause => cause.CurrentAmount);
+    var hiddenDonationCount = Model.MyDonations.Count(donation => donation.IsDonationHidden);
+}
+
+<section class="content-shell narrow-shell">
+    <h1 class="mb-3">My profile</h1>
+
+    <nav class="content-card profile-nav mb-4">
+        <a href="#settings">Profile settings</a>
+        <a href="#organizations">Organizations</a>
+        <a href="#causes">Causes</a>
+        <a href="#donations">My donations</a>
+        <a href="#financial">Financial</a>
+    </nav>
+
+    <form asp-action="Index" method="post" class="content-card" id="settings">
+        <input asp-for="Id" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="FullName" class="form-label"></label>
+                <input asp-for="FullName" class="form-control" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="PhoneNumber" class="form-label"></label>
+                <input asp-for="PhoneNumber" class="form-control" />
+                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+            </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="CurrentPassword" class="form-label"></label>
+                <div class="password-field">
+                    <input asp-for="CurrentPassword" class="form-control password-input" autocomplete="current-password" />
+                    <button class="password-toggle" type="button" data-password-toggle aria-label="Show password">Show</button>
+                </div>
+                <span asp-validation-for="CurrentPassword" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="NewPassword" class="form-label"></label>
+                <div class="password-field">
+                    <input asp-for="NewPassword" class="form-control password-input" autocomplete="new-password" />
+                    <button class="password-toggle" type="button" data-password-toggle aria-label="Show password">Show</button>
+                </div>
+                <span asp-validation-for="NewPassword" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="ConfirmNewPassword" class="form-label"></label>
+                <div class="password-field">
+                    <input asp-for="ConfirmNewPassword" class="form-control password-input" autocomplete="new-password" />
+                    <button class="password-toggle" type="button" data-password-toggle aria-label="Show password">Show</button>
+                </div>
+                <span asp-validation-for="ConfirmNewPassword" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Save profile</button>
+            <a class="btn btn-outline-dark" asp-controller="Home" asp-action="Index">Back</a>
+        </div>
+    </form>
+
+    <section class="content-card mt-4" id="organizations">
+        <h2 class="h5 mb-3">My organizations</h2>
+        @if (Model.RegisteredOrganizations.Any())
+        {
+            <div class="list-group list-group-flush">
+                @foreach (var organization in Model.RegisteredOrganizations)
+                {
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-semibold">@organization.FullName</div>
+                            <div class="small text-secondary">@organization.FocusArea</div>
+                        </div>
+                        <a class="btn btn-sm btn-outline-dark" asp-controller="Beneficiaries" asp-action="Edit" asp-route-id="@organization.Id">Edit</a>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="mb-0">You have not registered any organizations yet.</p>
+        }
+    </section>
+
+    <section class="content-card mt-4" id="causes">
+        <h2 class="h5 mb-3">My causes</h2>
+        @if (Model.MyCauses.Any())
+        {
+            <div class="list-group list-group-flush">
+                @foreach (var cause in Model.MyCauses)
+                {
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-semibold">@cause.Title</div>
+                            <div class="small text-secondary">@cause.Beneficiary?.FullName</div>
+                        </div>
+                        <a class="btn btn-sm btn-outline-dark" asp-controller="Campaigns" asp-action="Details" asp-route-id="@cause.Id">View</a>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="mb-0">You have not created any causes yet.</p>
+        }
+    </section>
+
+    <section class="content-card mt-4" id="donations">
+        <h2 class="h5 mb-3">Causes I donated to</h2>
+        @if (Model.MyDonations.Any())
+        {
+            <div class="list-group list-group-flush">
+                @foreach (var donation in Model.MyDonations)
+                {
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-semibold">@donation.FundingCampaign?.Title</div>
+                            <div class="small text-secondary">@CurrencyFormatter.Euro(donation.Amount) | @DateFormatter.EnglishShort(donation.DonatedOn)</div>
+                        </div>
+                        <a class="btn btn-sm btn-outline-dark" asp-controller="Campaigns" asp-action="Details" asp-route-id="@donation.FundingCampaignId">View</a>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="mb-0">You have not made any logged-in donations yet.</p>
+        }
+    </section>
+
+    <section class="content-card mt-4" id="financial">
+        <h2 class="h5 mb-3">Financial</h2>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="impact-panel">
+                    <div>
+                        <span class="impact-label">Total donated</span>
+                        <strong>@CurrencyFormatter.Euro(totalDonated)</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="impact-panel">
+                    <div>
+                        <span class="impact-label">Raised by my causes</span>
+                        <strong>@CurrencyFormatter.Euro(totalRaised)</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="impact-panel">
+                    <div>
+                        <span class="impact-label">Hidden donations</span>
+                        <strong>@hiddenDonationCount</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.querySelectorAll("[data-password-toggle]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                var wrapper = button.closest(".password-field");
+                var input = wrapper ? wrapper.querySelector(".password-input") : null;
+
+                if (!input) {
+                    return;
+                }
+
+                var isPassword = input.type === "password";
+                input.type = isPassword ? "text" : "password";
+                button.setAttribute("aria-label", isPassword ? "Hide password" : "Show password");
+                button.textContent = isPassword ? "Hide" : "Show";
+            });
+        });
+    </script>
+}

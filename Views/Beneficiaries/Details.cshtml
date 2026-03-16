@@ -1,0 +1,83 @@
+@model Beneficiary
+
+@{
+    ViewData["Title"] = "Beneficiary details";
+    var isVerified = Model.IsVerified;
+    var returnUrl = ViewBag.ReturnUrl as string;
+}
+
+<section class="content-shell">
+    <div class="section-heading">
+        <div>
+            <h1 class="mb-0">@Model.FullName</h1>
+        </div>
+        <div class="d-flex gap-2">
+            @if (User.IsInRole(ApplicationRoles.Administrator))
+            {
+                <a class="btn btn-primary" asp-action="Verify" asp-route-id="@Model.Id" asp-route-returnUrl="@Url.Action("Details", "Beneficiaries", new { id = Model.Id })">
+                    @(Model.IsVerified ? "Set unverified" : "Verify beneficiary")
+                </a>
+            }
+            @if ((ViewBag.CanEditBeneficiary as bool?) == true)
+            {
+                <a class="btn btn-outline-dark" asp-action="Edit" asp-route-id="@Model.Id" asp-route-returnUrl="@returnUrl">Edit</a>
+            }
+            @if ((ViewBag.CanEditBeneficiary as bool?) == true)
+            {
+                <a class="btn btn-outline-danger" asp-action="Delete" asp-route-id="@Model.Id">Delete</a>
+            }
+            @if (!string.IsNullOrWhiteSpace(returnUrl))
+            {
+                <a class="btn btn-outline-dark" href="@returnUrl">Back</a>
+            }
+            else
+            {
+                <a class="btn btn-outline-dark" asp-action="Index">Back to beneficiaries</a>
+            }
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-lg-5">
+            <article class="content-card h-100">
+                <h2 class="h5">About</h2>
+                <div class="mb-3">
+                    <span class="badge rounded-pill @(isVerified ? "text-bg-success" : "text-bg-secondary")">
+                        @(isVerified ? "Verified" : "Unverified")
+                    </span>
+                </div>
+                <p class="mb-3">@Model.Story</p>
+                <dl class="row mb-0">
+                    <dt class="col-4">Type</dt>
+                    <dd class="col-8">@Model.Kind</dd>
+                    <dt class="col-4">About</dt>
+                    <dd class="col-8">@Model.FocusArea</dd>
+                    <dt class="col-4">City</dt>
+                    <dd class="col-8">@Model.City</dd>
+                </dl>
+            </article>
+        </div>
+        <div class="col-lg-7">
+            <article class="content-card h-100">
+                <h2 class="h5">Related campaigns</h2>
+                <div class="list-group list-group-flush">
+                    @foreach (var campaign in Model.FundingCampaigns)
+                    {
+                        var progress = campaign.GoalAmount == 0 ? 0 : Math.Min(100, (campaign.CurrentAmount / campaign.GoalAmount) * 100);
+
+                        <a class="list-group-item list-group-item-action px-0" asp-controller="Campaigns" asp-action="Details" asp-route-id="@campaign.Id">
+                            <div class="d-flex justify-content-between">
+                                <strong>@campaign.Title</strong>
+                                <span>@CurrencyFormatter.Euro(campaign.CurrentAmount)</span>
+                            </div>
+                            <div class="progress my-2" role="progressbar" aria-label="Campaign progress" aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">
+                                <div class="progress-bar" style="width: @CurrencyFormatter.Percent(progress)"></div>
+                            </div>
+                            <div class="small text-secondary">Goal @CurrencyFormatter.Euro(campaign.GoalAmount) | Ends @DateFormatter.EnglishShort(campaign.EndDate)</div>
+                        </a>
+                    }
+                </div>
+            </article>
+        </div>
+    </div>
+</section>

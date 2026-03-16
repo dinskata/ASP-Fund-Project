@@ -1,8 +1,104 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model HomeIndexViewModel
+
+@{
+    ViewData["Title"] = "Community Fund Hub";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="hero-card mb-5">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <h1 class="display-5 fw-bold mb-3">Community Fund Hub</h1>
+            <p class="lead text-secondary mb-4">
+                A simple place to create campaigns, support people and causes, and follow donations.
+            </p>
+            <div class="d-flex flex-wrap gap-3">
+                <a class="btn btn-primary btn-lg" asp-controller="Campaigns" asp-action="Index">Campaigns</a>
+                <a class="btn btn-outline-dark btn-lg" asp-controller="Beneficiaries" asp-action="Index">Beneficiaries</a>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="impact-panel">
+                <div>
+                    <span class="impact-label">Total campaigns</span>
+                    <strong>@Model.TotalCampaigns</strong>
+                </div>
+                <div>
+                    <span class="impact-label">Active beneficiaries</span>
+                    <strong>@Model.ActiveBeneficiaries</strong>
+                </div>
+                <div>
+                    <span class="impact-label">Funds raised</span>
+                    <strong>@CurrencyFormatter.Euro(Model.TotalRaised)</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-5">
+    <div class="section-heading">
+        <h2 class="h3 mb-0">Featured campaigns</h2>
+        <a class="btn btn-sm btn-outline-dark" asp-controller="Campaigns" asp-action="Create">Create campaign</a>
+    </div>
+
+    <div class="row g-4 mt-1">
+        @foreach (var campaign in Model.FeaturedCampaigns)
+        {
+            var progress = campaign.GoalAmount == 0 ? 0 : Math.Min(100, (campaign.CurrentAmount / campaign.GoalAmount) * 100);
+
+            <div class="col-md-6 col-xl-4">
+                <article class="content-card h-100">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                        <span class="badge rounded-pill text-bg-warning">@campaign.Category</span>
+                        <span class="small text-muted">@DateFormatter.EnglishShort(campaign.EndDate)</span>
+                    </div>
+                    <h3 class="h5">@campaign.Title</h3>
+                    <p class="text-secondary">@campaign.Summary</p>
+                    <p class="small mb-2"><strong>Beneficiary:</strong> @campaign.Beneficiary?.FullName</p>
+                    <div class="progress mb-2" role="progressbar" aria-label="Campaign progress" aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar" style="width: @CurrencyFormatter.Percent(progress)"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-secondary mb-3">
+                        <span>@CurrencyFormatter.Euro(campaign.CurrentAmount) raised</span>
+                        <span>Goal @CurrencyFormatter.Euro(campaign.GoalAmount)</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-dark" asp-controller="Campaigns" asp-action="Details" asp-route-id="@campaign.Id">View</a>
+                        <a class="btn btn-primary" asp-controller="Campaigns" asp-action="Donate" asp-route-id="@campaign.Id">Donate</a>
+                    </div>
+                </article>
+            </div>
+        }
+    </div>
+</section>
+
+<section>
+    <div class="section-heading">
+        <h2 class="h3 mb-0">Recent donations</h2>
+    </div>
+
+    <div class="row g-4 mt-1">
+        @foreach (var contribution in Model.RecentContributions)
+        {
+            <div class="col-md-6">
+                <article class="content-card h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h3 class="h6 mb-0">@contribution.DonorName</h3>
+                        <span class="fw-semibold">@CurrencyFormatter.Euro(contribution.Amount)</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        @contribution.FundingCampaign?.Title | @DateFormatter.EnglishShort(contribution.DonatedOn)
+                    </p>
+                    <p class="small text-secondary mb-2">@contribution.Frequency</p>
+                    <p class="mb-0">
+                        @((contribution.Frequency == ContributionFrequency.OneTime &&
+                            !string.IsNullOrWhiteSpace(contribution.Note) &&
+                            !contribution.IsCommentHidden)
+                            ? contribution.Note
+                            : "No note.")
+                    </p>
+                </article>
+            </div>
+        }
+    </div>
+</section>

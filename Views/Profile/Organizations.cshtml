@@ -1,0 +1,66 @@
+@model IReadOnlyCollection<Beneficiary>
+
+@{
+    ViewData["Title"] = "My organizations";
+    var isAdminProfile = (bool?)ViewBag.IsAdminProfile == true;
+    var currentSearch = ViewBag.Search as string;
+    var currentStatus = ViewBag.Status as string ?? "all";
+}
+
+<section class="content-shell narrow-shell">
+    <div class="section-heading mb-3">
+        <h1 class="mb-0">My organizations</h1>
+        <a class="btn btn-outline-dark" asp-controller="Beneficiaries" asp-action="RegisterOrganization">Add organization</a>
+    </div>
+    <partial name="_ProfileNav" />
+
+    @if (isAdminProfile)
+    {
+        <form method="get" class="content-card mb-4">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-8">
+                    <label class="form-label" for="search">Search</label>
+                    <input class="form-control" id="search" name="search" value="@currentSearch" placeholder="Search organizations" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="status">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="all" selected="@(currentStatus == "all")">All</option>
+                        <option value="verified" selected="@(currentStatus == "verified")">Verified</option>
+                        <option value="unverified" selected="@(currentStatus == "unverified")">Unverified</option>
+                    </select>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Apply</button>
+                <a class="btn btn-outline-dark" asp-action="Organizations">Clear</a>
+            </div>
+        </form>
+    }
+
+    <section class="content-card">
+        @if (Model.Any())
+        {
+            <div class="list-group list-group-flush">
+                @foreach (var organization in Model)
+                {
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-semibold">@organization.FullName</div>
+                            <div class="small text-secondary">@organization.FocusArea</div>
+                            <div class="small text-secondary">@(organization.IsVerified ? "Verified" : "Waiting for verification")</div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-sm btn-outline-dark" asp-controller="Beneficiaries" asp-action="Details" asp-route-id="@organization.Id" asp-route-returnUrl="@Url.Action("Organizations", "Profile")">View</a>
+                            <a class="btn btn-sm btn-outline-dark" asp-controller="Beneficiaries" asp-action="Edit" asp-route-id="@organization.Id" asp-route-returnUrl="@Url.Action("Organizations", "Profile")">Edit</a>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="mb-0">You have not registered any organizations yet.</p>
+        }
+    </section>
+</section>

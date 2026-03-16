@@ -1,0 +1,235 @@
+@model CreateCampaignViewModel
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Create campaign";
+}
+
+<section class="content-shell narrow-shell">
+    <h1 class="mb-3">Add a new campaign</h1>
+
+    <form asp-action="Create" method="post" class="content-card">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="Title" class="form-label"></label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="OrganizerName" class="form-label"></label>
+                <input asp-for="OrganizerName" class="form-control" />
+                <span asp-validation-for="OrganizerName" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Category" class="form-label"></label>
+                <select asp-for="Category" class="form-select" asp-items="Html.GetEnumSelectList<CampaignCategory>()"></select>
+                <span asp-validation-for="Category" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="GoalAmount" class="form-label"></label>
+                <input asp-for="GoalAmount" class="form-control" type="text" inputmode="decimal" data-decimal-field value="@Model.GoalAmount.ToString("0.00", CultureInfo.InvariantCulture)" />
+                <span asp-validation-for="GoalAmount" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="CurrentAmount" class="form-label"></label>
+                <input asp-for="CurrentAmount" class="form-control" type="text" inputmode="decimal" data-decimal-field value="@Model.CurrentAmount.ToString("0.00", CultureInfo.InvariantCulture)" />
+                <span asp-validation-for="CurrentAmount" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="StartDate" class="form-label"></label>
+                <input asp-for="StartDate" class="form-control" />
+                <span asp-validation-for="StartDate" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="EndDate" class="form-label"></label>
+                <input asp-for="EndDate" class="form-control" />
+                <span asp-validation-for="EndDate" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Summary" class="form-label"></label>
+                <textarea asp-for="Summary" class="form-control" rows="5"></textarea>
+                <span asp-validation-for="Summary" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="content-card inner-panel mt-4">
+            @if (User.IsInRole(ApplicationRoles.Administrator))
+            {
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label asp-for="BeneficiaryId" class="form-label"></label>
+                        <select asp-for="BeneficiaryId" class="form-select" asp-items="ViewBag.BeneficiaryId"></select>
+                        <span asp-validation-for="BeneficiaryId" class="text-danger"></span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-3 mb-3">
+                    <div class="col-12">
+                        <label asp-for="CreationMode" class="form-label"></label>
+                        <select asp-for="CreationMode" class="form-select" id="creationModeSelect">
+                            <option value="self">Create funding for myself</option>
+                            <option value="other">Create funding for another person (Create Beneficieri)</option>
+                            @if (((SelectList)ViewBag.BeneficiaryId).Any())
+                            {
+                                <option value="approved">Select one of your approved beneficiaries</option>
+                            }
+                        </select>
+                        <span asp-validation-for="CreationMode" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3" id="approvedBeneficiarySection">
+                    <div class="col-12">
+                        <label asp-for="BeneficiaryId" class="form-label"></label>
+                        <select asp-for="BeneficiaryId" class="form-select" asp-items="ViewBag.BeneficiaryId" id="beneficiarySelect">
+                            <option value="">Select approved organization</option>
+                        </select>
+                        <span asp-validation-for="BeneficiaryId" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <hr class="my-4" id="selfSectionDivider" />
+
+                <h2 class="h5 mb-3" id="selfSectionTitle">Your Information</h2>
+                <div class="row g-3" id="selfBeneficiarySection">
+                    <div class="col-md-6">
+                        <label asp-for="SelfBeneficiaryName" class="form-label"></label>
+                        <input asp-for="SelfBeneficiaryName" class="form-control" />
+                        <span asp-validation-for="SelfBeneficiaryName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="SelfFocusArea" class="form-label"></label>
+                        <input asp-for="SelfFocusArea" class="form-control" />
+                        <span asp-validation-for="SelfFocusArea" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="SelfCity" class="form-label"></label>
+                        <input asp-for="SelfCity" class="form-control" />
+                        <span asp-validation-for="SelfCity" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="SelfStory" class="form-label"></label>
+                        <textarea asp-for="SelfStory" class="form-control" rows="4"></textarea>
+                        <span asp-validation-for="SelfStory" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="SelfBankAccountName" class="form-label"></label>
+                        <input asp-for="SelfBankAccountName" class="form-control" />
+                        <span asp-validation-for="SelfBankAccountName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="SelfBankName" class="form-label"></label>
+                        <input asp-for="SelfBankName" class="form-control" />
+                        <span asp-validation-for="SelfBankName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="SelfIban" class="form-label"></label>
+                        <input asp-for="SelfIban" class="form-control text-uppercase" />
+                        <span asp-validation-for="SelfIban" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="SelfBic" class="form-label"></label>
+                        <input asp-for="SelfBic" class="form-control text-uppercase" />
+                        <span asp-validation-for="SelfBic" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <hr class="my-4" id="anotherSectionDivider" />
+
+                <h2 class="h5 mb-3" id="anotherSectionTitle">Another person</h2>
+                <div class="row g-3" id="anotherBeneficiarySection">
+                    <div class="col-md-6">
+                        <label asp-for="AnotherBeneficiaryName" class="form-label"></label>
+                        <input asp-for="AnotherBeneficiaryName" class="form-control" />
+                        <span asp-validation-for="AnotherBeneficiaryName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="AnotherFocusArea" class="form-label"></label>
+                        <input asp-for="AnotherFocusArea" class="form-control" />
+                        <span asp-validation-for="AnotherFocusArea" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="AnotherCity" class="form-label"></label>
+                        <input asp-for="AnotherCity" class="form-control" />
+                        <span asp-validation-for="AnotherCity" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="AnotherStory" class="form-label"></label>
+                        <textarea asp-for="AnotherStory" class="form-control" rows="4"></textarea>
+                        <span asp-validation-for="AnotherStory" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="AnotherBankAccountName" class="form-label"></label>
+                        <input asp-for="AnotherBankAccountName" class="form-control" />
+                        <span asp-validation-for="AnotherBankAccountName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="AnotherBankName" class="form-label"></label>
+                        <input asp-for="AnotherBankName" class="form-control" />
+                        <span asp-validation-for="AnotherBankName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="AnotherIban" class="form-label"></label>
+                        <input asp-for="AnotherIban" class="form-control text-uppercase" />
+                        <span asp-validation-for="AnotherIban" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="AnotherBic" class="form-label"></label>
+                        <input asp-for="AnotherBic" class="form-control text-uppercase" />
+                        <span asp-validation-for="AnotherBic" class="text-danger"></span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Submit campaign</button>
+            <a class="btn btn-outline-dark" asp-action="Index">Back to list</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const creationModeSelect = document.getElementById('creationModeSelect');
+            const beneficiarySelect = document.getElementById('beneficiarySelect');
+            const approvedBeneficiarySection = document.getElementById('approvedBeneficiarySection');
+            const selfBeneficiarySection = document.getElementById('selfBeneficiarySection');
+            const selfSectionTitle = document.getElementById('selfSectionTitle');
+            const selfSectionDivider = document.getElementById('selfSectionDivider');
+            const anotherBeneficiarySection = document.getElementById('anotherBeneficiarySection');
+            const anotherSectionTitle = document.getElementById('anotherSectionTitle');
+            const anotherSectionDivider = document.getElementById('anotherSectionDivider');
+
+            if (!creationModeSelect || !beneficiarySelect || !approvedBeneficiarySection || !selfBeneficiarySection || !selfSectionTitle ||
+                !selfSectionDivider || !anotherBeneficiarySection || !anotherSectionTitle || !anotherSectionDivider) {
+                return;
+            }
+
+            function applyCreationModeState() {
+                const selectedMode = creationModeSelect.value;
+
+                approvedBeneficiarySection.style.display = selectedMode === 'approved' ? '' : 'none';
+                selfBeneficiarySection.style.display = selectedMode === 'self' ? '' : 'none';
+                selfSectionTitle.style.display = selectedMode === 'self' ? '' : 'none';
+                selfSectionDivider.style.display = selectedMode === 'self' ? '' : 'none';
+                anotherBeneficiarySection.style.display = selectedMode === 'other' ? '' : 'none';
+                anotherSectionTitle.style.display = selectedMode === 'other' ? '' : 'none';
+                anotherSectionDivider.style.display = selectedMode === 'other' ? '' : 'none';
+
+                if (selectedMode !== 'approved') {
+                    beneficiarySelect.value = '';
+                }
+            }
+
+            creationModeSelect.addEventListener('change', applyCreationModeState);
+            applyCreationModeState();
+        })();
+    </script>
+}
