@@ -51,6 +51,24 @@ public class HomeController : Controller
         return View(model);
     }
 
+    public IActionResult Support()
+    {
+        return View(new SupportInquiryViewModel());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Support(SupportInquiryViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        TempData["StatusMessage"] = "Demo only. Your inquiry was not actually sent.";
+        return RedirectToAction(nameof(Support));
+    }
+
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
