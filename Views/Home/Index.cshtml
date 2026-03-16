@@ -2,6 +2,9 @@
 
 @{
     ViewData["Title"] = "Community Fund Hub";
+    var recentContributions = Model.RecentContributions
+        .OrderByDescending(contribution => contribution.Id)
+        .ThenByDescending(contribution => contribution.DonatedOn);
 }
 
 <section class="hero-card mb-5">
@@ -78,7 +81,7 @@
     </div>
 
     <div class="row g-4 mt-1">
-        @foreach (var contribution in Model.RecentContributions)
+        @foreach (var contribution in recentContributions)
         {
             <div class="col-md-6">
                 <article class="content-card h-100">

@@ -4,11 +4,14 @@
     ViewData["Title"] = "Campaign details";
     var progress = Model.GoalAmount == 0 ? 0 : Math.Min(100, (Model.CurrentAmount / Model.GoalAmount) * 100);
     var returnUrl = ViewBag.ReturnUrl as string;
-    var canSeeHiddenDonations = User.IsInRole(ApplicationRoles.Administrator) ||
-        Model.OwnerId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var canSeeHiddenDonations = User.IsInRole(ApplicationRoles.Administrator) || Model.OwnerId == currentUserId;
     var visibleContributions = canSeeHiddenDonations
         ? Model.Contributions
-        : Model.Contributions.Where(item => !item.IsDonationHidden);
+        : Model.Contributions.Where(item => !item.IsDonationHidden || item.ContributorUserId == currentUserId);
+    visibleContributions = visibleContributions
+        .OrderByDescending(item => item.Id)
+        .ThenByDescending(item => item.DonatedOn);
     var donationResult = TempData["DonationResult"] as string;
     var donationId = TempData["DonationId"]?.ToString();
 }
@@ -36,7 +39,7 @@
             {
                 <a class="btn btn-primary" asp-action="Donate" asp-route-id="@Model.Id">Donate</a>
             }
-            @if (User.IsInRole(ApplicationRoles.Administrator) || Model.OwnerId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
+            @if (User.IsInRole(ApplicationRoles.Administrator) || Model.OwnerId == currentUserId)
             {
                 <a class="btn btn-outline-dark" asp-action="Edit" asp-route-id="@Model.Id" asp-route-returnUrl="@returnUrl">Edit</a>
                 <a class="btn btn-outline-danger" asp-action="Delete" asp-route-id="@Model.Id">Delete</a>
@@ -101,12 +104,12 @@
                                 @contribution.Frequency
                                 @if (contribution.IsDonationHidden)
                                 {
-                                    <span> · Hidden donation</span>
+                                    <span> | Hidden donation</span>
                                 }
                             </div>
                             @if (contribution.Frequency == ContributionFrequency.OneTime &&
                                 !string.IsNullOrWhiteSpace(contribution.Note) &&
-                                !contribution.IsCommentHidden)
+                                (!contribution.IsCommentHidden || contribution.ContributorUserId == currentUserId))
                             {
                                 <div class="mt-1">@contribution.Note</div>
                             }

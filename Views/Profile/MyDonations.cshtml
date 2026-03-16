@@ -2,11 +2,30 @@
 
 @{
     ViewData["Title"] = "My donations";
+    var currentFilter = ViewBag.Filter as string ?? "all";
 }
 
 <section class="content-shell narrow-shell">
     <h1 class="mb-3">My donations</h1>
     <partial name="_ProfileNav" />
+
+    <form method="get" class="content-card mb-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label" for="filter">Filter</label>
+                <select class="form-select" id="filter" name="filter">
+                    <option value="all" selected="@(currentFilter == "all")">All donations</option>
+                    <option value="active" selected="@(currentFilter == "active")">Active recurring donations</option>
+                    <option value="recurring" selected="@(currentFilter == "recurring")">All recurring donations</option>
+                    <option value="hidden" selected="@(currentFilter == "hidden")">Hidden donations</option>
+                </select>
+            </div>
+        </div>
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Apply</button>
+            <a class="btn btn-outline-dark" asp-action="MyDonations">Clear</a>
+        </div>
+    </form>
 
     <section class="content-card">
         @if (Model.Any())
@@ -14,6 +33,15 @@
             <div class="list-group list-group-flush">
                 @foreach (var donation in Model)
                 {
+                    var nextPaymentDate = donation.Status == ContributionStatus.Successful
+                        ? donation.Frequency switch
+                        {
+                            ContributionFrequency.Weekly => donation.DonatedOn.AddDays(7),
+                            ContributionFrequency.Monthly => donation.DonatedOn.AddMonths(1),
+                            _ => (DateTime?)null
+                        }
+                        : null;
+
                     <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
                         <div>
                             <div class="fw-semibold">@donation.FundingCampaign?.Title</div>
@@ -25,6 +53,14 @@
                                 @(donation.IsDonationHidden ? "Hidden donation" : "Visible donation")
                                 | @(donation.Status == ContributionStatus.Successful ? "Successful" : donation.Status.ToString())
                             </div>
+                            @if (nextPaymentDate.HasValue)
+                            {
+                                <div class="small text-secondary">Next payment: @DateFormatter.EnglishShort(nextPaymentDate.Value)</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(donation.Note))
+                            {
+                                <div class="small text-secondary">@donation.Note</div>
+                            }
                         </div>
                         <div class="d-flex gap-2">
                             <a class="btn btn-sm btn-outline-dark" asp-controller="Campaigns" asp-action="Details" asp-route-id="@donation.FundingCampaignId">View</a>
@@ -34,6 +70,13 @@
                                     @(donation.IsDonationHidden ? "Show" : "Hide")
                                 </button>
                             </form>
+                            @if (donation.Frequency != ContributionFrequency.OneTime && donation.Status == ContributionStatus.Successful)
+                            {
+                                <form asp-action="CancelRecurringDonation" method="post" onsubmit="return confirm('Cancel this recurring donation?');">
+                                    <input type="hidden" name="id" value="@donation.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancel recurring</button>
+                                </form>
+                            }
                         </div>
                     </div>
                 }

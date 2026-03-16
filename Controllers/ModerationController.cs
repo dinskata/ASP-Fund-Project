@@ -25,7 +25,146 @@ public class ModerationController : Controller
         _userManager = userManager;
     }
 
-    public async Task<IActionResult> Index(string? userSearch, string userRole = "all")
+    public IActionResult Index()
+    {
+        return RedirectToAction(nameof(Overview));
+    }
+
+    public async Task<IActionResult> Overview()
+    {
+        var model = await BuildDashboardModelAsync();
+        return View(model);
+    }
+
+    public async Task<IActionResult> Beneficiaries(string? search, string status = "all")
+    {
+        var model = await BuildDashboardModelAsync();
+        IEnumerable<Beneficiary> beneficiaries = model.BeneficiaryReviewItems;
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var normalizedSearch = search.Trim().ToLowerInvariant();
+            beneficiaries = beneficiaries.Where(beneficiary =>
+                beneficiary.FullName.ToLowerInvariant().Contains(normalizedSearch) ||
+                beneficiary.FocusArea.ToLowerInvariant().Contains(normalizedSearch) ||
+                beneficiary.City.ToLowerInvariant().Contains(normalizedSearch));
+        }
+
+        beneficiaries = status switch
+        {
+            "verified" => beneficiaries.Where(beneficiary => beneficiary.IsVerified),
+            "unverified" => beneficiaries.Where(beneficiary => !beneficiary.IsVerified),
+            "organizations" => beneficiaries.Where(beneficiary => beneficiary.Kind == BeneficiaryKind.Organization),
+            "people" => beneficiaries.Where(beneficiary => beneficiary.Kind == BeneficiaryKind.Person),
+            _ => beneficiaries
+        };
+
+        model.BeneficiaryReviewItems = beneficiaries.ToList();
+        ViewBag.Search = search;
+        ViewBag.Status = status;
+        return View(model);
+    }
+
+    public async Task<IActionResult> Campaigns(string? search, string status = "all")
+    {
+        var model = await BuildDashboardModelAsync();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var normalizedSearch = search.Trim().ToLowerInvariant();
+            model.PendingApprovalCampaigns = model.PendingApprovalCampaigns
+                .Where(campaign =>
+                    campaign.Title.ToLowerInvariant().Contains(normalizedSearch) ||
+                    campaign.OrganizerName.ToLowerInvariant().Contains(normalizedSearch) ||
+                    (campaign.Beneficiary != null && campaign.Beneficiary.FullName.ToLowerInvariant().Contains(normalizedSearch)))
+                .ToList();
+            model.ApprovedCampaigns = model.ApprovedCampaigns
+                .Where(campaign =>
+                    campaign.Title.ToLowerInvariant().Contains(normalizedSearch) ||
+                    campaign.OrganizerName.ToLowerInvariant().Contains(normalizedSearch) ||
+                    (campaign.Beneficiary != null && campaign.Beneficiary.FullName.ToLowerInvariant().Contains(normalizedSearch)))
+                .ToList();
+            model.DeletionRequestCampaigns = model.DeletionRequestCampaigns
+                .Where(campaign =>
+                    campaign.Title.ToLowerInvariant().Contains(normalizedSearch) ||
+                    campaign.OrganizerName.ToLowerInvariant().Contains(normalizedSearch) ||
+                    (campaign.Beneficiary != null && campaign.Beneficiary.FullName.ToLowerInvariant().Contains(normalizedSearch)))
+                .ToList();
+        }
+
+        if (status == "featured")
+        {
+            model.ApprovedCampaigns = model.ApprovedCampaigns.Where(campaign => campaign.IsFeatured).ToList();
+        }
+        else if (status == "pending")
+        {
+            model.ApprovedCampaigns = [];
+            model.DeletionRequestCampaigns = [];
+        }
+        else if (status == "deletion")
+        {
+            model.PendingApprovalCampaigns = [];
+            model.ApprovedCampaigns = [];
+        }
+        else if (status == "approved")
+        {
+            model.PendingApprovalCampaigns = [];
+            model.DeletionRequestCampaigns = [];
+        }
+
+        ViewBag.Search = search;
+        ViewBag.Status = status;
+        return View(model);
+    }
+
+    public async Task<IActionResult> Donations(string? search, string status = "all")
+    {
+        var model = await BuildDashboardModelAsync();
+        IEnumerable<Contribution> donations = await _context.Contributions
+            .AsNoTracking()
+            .Include(donation => donation.FundingCampaign)
+            .ThenInclude(campaign => campaign!.Beneficiary)
+            .OrderByDescending(donation => donation.Id)
+            .ThenByDescending(donation => donation.DonatedOn)
+            .ToListAsync();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var normalizedSearch = search.Trim().ToLowerInvariant();
+            donations = donations.Where(donation =>
+                donation.DonorName.ToLowerInvariant().Contains(normalizedSearch) ||
+                (donation.FundingCampaign != null && donation.FundingCampaign.Title.ToLowerInvariant().Contains(normalizedSearch)) ||
+                (donation.FundingCampaign?.Beneficiary != null && donation.FundingCampaign.Beneficiary.FullName.ToLowerInvariant().Contains(normalizedSearch)));
+        }
+
+        donations = status switch
+        {
+            "active" => donations.Where(donation =>
+                donation.Frequency != ContributionFrequency.OneTime &&
+                donation.Status == ContributionStatus.Successful),
+            "weekly" => donations.Where(donation => donation.Frequency == ContributionFrequency.Weekly),
+            "monthly" => donations.Where(donation => donation.Frequency == ContributionFrequency.Monthly),
+            "hidden" => donations.Where(donation => donation.IsDonationHidden),
+            "visible" => donations.Where(donation => !donation.IsDonationHidden),
+            "recurring" => donations.Where(donation => donation.Frequency != ContributionFrequency.OneTime),
+            "successful" => donations.Where(donation => donation.Status == ContributionStatus.Successful),
+            _ => donations
+        };
+
+        model.LatestDonations = donations.ToList();
+        ViewBag.Search = search;
+        ViewBag.Status = status;
+        return View(model);
+    }
+
+    public async Task<IActionResult> Users(string? userSearch, string userRole = "all")
+    {
+        var model = await BuildDashboardModelAsync(userSearch, userRole);
+        ViewBag.UserSearch = userSearch;
+        ViewBag.UserRole = userRole;
+        return View(model);
+    }
+
+    private async Task<AdminDashboardViewModel> BuildDashboardModelAsync(string? userSearch = null, string userRole = "all")
     {
         var pendingCampaigns = await _fundingCampaignService.GetPendingApprovalAsync();
         var visibleCampaigns = await _fundingCampaignService.GetVisibleAsync(null, true);
@@ -92,11 +231,7 @@ public class ModerationController : Controller
             LatestDonations = latestDonations,
             Users = users
         };
-
-        ViewBag.UserSearch = userSearch;
-        ViewBag.UserRole = userRole;
-
-        return View(model);
+        return model;
     }
 
     [HttpPost]
@@ -111,7 +246,7 @@ public class ModerationController : Controller
         }
 
         TempData["StatusMessage"] = "Campaign approved and published.";
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Campaigns));
     }
 
     [HttpPost]
@@ -126,7 +261,7 @@ public class ModerationController : Controller
         }
 
         TempData["StatusMessage"] = "Featured state updated.";
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Campaigns));
     }
 
     [HttpPost]
@@ -141,7 +276,7 @@ public class ModerationController : Controller
         }
 
         TempData["StatusMessage"] = "Campaign visibility updated.";
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Campaigns));
     }
 
     [HttpPost]
@@ -156,7 +291,7 @@ public class ModerationController : Controller
         }
 
         TempData["StatusMessage"] = "Campaign deletion approved.";
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Campaigns));
     }
 
     [HttpPost]
@@ -177,7 +312,7 @@ public class ModerationController : Controller
             ? "Donation hidden from public pages."
             : "Donation shown on public pages again.";
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Donations));
     }
 
     [HttpPost]
@@ -198,7 +333,7 @@ public class ModerationController : Controller
             ? "Beneficiary verified."
             : "Beneficiary set to unverified.";
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Beneficiaries));
     }
 
     public async Task<IActionResult> EditUser(string id)
@@ -217,6 +352,60 @@ public class ModerationController : Controller
             Email = user.Email ?? string.Empty,
             PhoneNumber = user.PhoneNumber,
             IsAdministrator = await _userManager.IsInRoleAsync(user, ApplicationRoles.Administrator)
+        });
+    }
+
+    public async Task<IActionResult> UserDetails(string id)
+    {
+        var user = await _userManager.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(entry => entry.Id == id);
+
+        if (user is null)
+        {
+            return NotFound();
+        }
+
+        var causes = await _context.FundingCampaigns
+            .AsNoTracking()
+            .Include(campaign => campaign.Beneficiary)
+            .Where(campaign => campaign.OwnerId == id)
+            .OrderByDescending(campaign => campaign.CreatedOn)
+            .ToListAsync();
+
+        var organizations = await _context.Beneficiaries
+            .AsNoTracking()
+            .Include(beneficiary => beneficiary.FundingCampaigns)
+            .Where(beneficiary => beneficiary.ManagerUserId == id)
+            .OrderBy(beneficiary => beneficiary.FullName)
+            .ToListAsync();
+
+        var donations = await _context.Contributions
+            .AsNoTracking()
+            .Include(contribution => contribution.FundingCampaign)
+            .Where(contribution => contribution.ContributorUserId == id)
+            .OrderByDescending(contribution => contribution.Id)
+            .ThenByDescending(contribution => contribution.DonatedOn)
+            .ToListAsync();
+
+        var activeRecurringDonations = donations
+            .Where(contribution =>
+                contribution.Frequency != ContributionFrequency.OneTime &&
+                contribution.Status == ContributionStatus.Successful)
+            .ToList();
+
+        return View(new AdminUserDetailsViewModel
+        {
+            User = user,
+            IsAdministrator = await _userManager.IsInRoleAsync(user, ApplicationRoles.Administrator),
+            Causes = causes,
+            Organizations = organizations,
+            Donations = donations,
+            ActiveRecurringDonations = activeRecurringDonations,
+            TotalDonated = donations
+                .Where(contribution => contribution.Status == ContributionStatus.Successful)
+                .Sum(contribution => contribution.Amount),
+            TotalRaisedByCauses = causes.Sum(campaign => campaign.CurrentAmount)
         });
     }
 
@@ -288,7 +477,7 @@ public class ModerationController : Controller
         }
 
         TempData["StatusMessage"] = "User account updated.";
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Users));
     }
 
     [HttpPost, ActionName("DeleteUser")]
@@ -309,7 +498,7 @@ public class ModerationController : Controller
         if (_userManager.GetUserId(User) == user.Id)
         {
             TempData["StatusMessage"] = "You cannot delete the currently signed-in admin account.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Users));
         }
 
         if (user.CreatedCampaigns.Any())
@@ -333,6 +522,6 @@ public class ModerationController : Controller
         }
 
         TempData["StatusMessage"] = "User deleted.";
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Users));
     }
 }

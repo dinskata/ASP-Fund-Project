@@ -1,0 +1,193 @@
+@model AdminUserDetailsViewModel
+
+@{
+    ViewData["Title"] = "User details";
+}
+
+<section class="content-shell">
+    <div class="section-heading">
+        <div>
+            <h1 class="mb-0">@Model.User.FullName</h1>
+            <div class="small text-secondary">@Model.User.Email</div>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-dark" asp-action="EditUser" asp-route-id="@Model.User.Id">Edit user</a>
+            <a class="btn btn-outline-dark" asp-action="Index">Back to moderation</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-1 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <article class="content-card h-100">
+                <span class="impact-label">Role</span>
+                <strong class="dashboard-number">@(Model.IsAdministrator ? "Admin" : "User")</strong>
+            </article>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <article class="content-card h-100">
+                <span class="impact-label">Causes</span>
+                <strong class="dashboard-number">@Model.Causes.Count</strong>
+            </article>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <article class="content-card h-100">
+                <span class="impact-label">Organizations</span>
+                <strong class="dashboard-number">@Model.Organizations.Count</strong>
+            </article>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <article class="content-card h-100">
+                <span class="impact-label">Total donated</span>
+                <strong class="dashboard-number">@CurrencyFormatter.Euro(Model.TotalDonated)</strong>
+            </article>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <section class="content-card h-100">
+                <h2 class="h5 mb-3">User info</h2>
+                <dl class="row mb-0">
+                    <dt class="col-5">Full name</dt>
+                    <dd class="col-7">@Model.User.FullName</dd>
+                    <dt class="col-5">Email</dt>
+                    <dd class="col-7">@Model.User.Email</dd>
+                    <dt class="col-5">Phone</dt>
+                    <dd class="col-7">@(string.IsNullOrWhiteSpace(Model.User.PhoneNumber) ? "-" : Model.User.PhoneNumber)</dd>
+                    <dt class="col-5">Raised by causes</dt>
+                    <dd class="col-7">@CurrencyFormatter.Euro(Model.TotalRaisedByCauses)</dd>
+                </dl>
+            </section>
+        </div>
+        <div class="col-lg-6">
+            <section class="content-card h-100">
+                <h2 class="h5 mb-3">Active recurring donations</h2>
+                @if (Model.ActiveRecurringDonations.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var donation in Model.ActiveRecurringDonations)
+                        {
+                            var nextPaymentDate = donation.Frequency switch
+                            {
+                                ContributionFrequency.Weekly => donation.DonatedOn.AddDays(7),
+                                ContributionFrequency.Monthly => donation.DonatedOn.AddMonths(1),
+                                _ => donation.DonatedOn
+                            };
+
+                            <div class="list-group-item px-0">
+                                <div class="fw-semibold">@donation.FundingCampaign?.Title</div>
+                                <div class="small text-secondary">
+                                    @CurrencyFormatter.Euro(donation.Amount) | @donation.Frequency | Next payment @DateFormatter.EnglishShort(nextPaymentDate)
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="mb-0">No active recurring donations.</p>
+                }
+            </section>
+        </div>
+    </div>
+</section>
+
+<section class="content-shell">
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <section class="content-card h-100">
+                <h2 class="h5 mb-3">Causes</h2>
+                @if (Model.Causes.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var cause in Model.Causes)
+                        {
+                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold">@cause.Title</div>
+                                    <div class="small text-secondary">@cause.Beneficiary?.FullName</div>
+                                    <div class="small text-secondary">
+                                        @CurrencyFormatter.Euro(cause.CurrentAmount) of @CurrencyFormatter.Euro(cause.GoalAmount)
+                                        | @(cause.IsApproved ? "Approved" : "Pending")
+                                    </div>
+                                </div>
+                                <a class="btn btn-sm btn-outline-dark" asp-controller="Campaigns" asp-action="Details" asp-route-id="@cause.Id">View</a>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="mb-0">No causes.</p>
+                }
+            </section>
+        </div>
+        <div class="col-lg-6">
+            <section class="content-card h-100">
+                <h2 class="h5 mb-3">Organizations</h2>
+                @if (Model.Organizations.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var organization in Model.Organizations)
+                        {
+                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold">@organization.FullName</div>
+                                    <div class="small text-secondary">@organization.FocusArea</div>
+                                    <div class="small text-secondary">@(organization.IsVerified ? "Verified" : "Unverified")</div>
+                                </div>
+                                <a class="btn btn-sm btn-outline-dark" asp-controller="Beneficiaries" asp-action="Details" asp-route-id="@organization.Id">View</a>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="mb-0">No organizations.</p>
+                }
+            </section>
+        </div>
+    </div>
+</section>
+
+<section class="content-shell">
+    <section class="content-card">
+        <h2 class="h5 mb-3">All donations</h2>
+        @if (Model.Donations.Any())
+        {
+            <div class="table-responsive admin-table">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cause</th>
+                            <th>Amount</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Visibility</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var donation in Model.Donations)
+                        {
+                            <tr>
+                                <td>@donation.Id</td>
+                                <td>@donation.FundingCampaign?.Title</td>
+                                <td>@CurrencyFormatter.Euro(donation.Amount)</td>
+                                <td>@donation.Frequency</td>
+                                <td>@donation.Status</td>
+                                <td>@DateFormatter.EnglishShort(donation.DonatedOn)</td>
+                                <td>@(donation.IsDonationHidden ? "Hidden" : "Visible")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="mb-0">No donations.</p>
+        }
+    </section>
+</section>

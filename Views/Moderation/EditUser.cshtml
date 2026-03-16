@@ -38,6 +38,7 @@
 
         <div class="d-flex gap-2 mt-4">
             <button type="submit" class="btn btn-primary">Save user</button>
+            <a class="btn btn-outline-dark" asp-action="UserDetails" asp-route-id="@Model.Id">User details</a>
             <a class="btn btn-outline-danger" asp-action="DeleteUser" asp-route-id="@Model.Id">Delete user</a>
             <a class="btn btn-outline-dark" asp-action="Index">Back to moderation</a>
         </div>

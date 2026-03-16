@@ -234,7 +234,7 @@ public class ProfileController : Controller
         return View(causes);
     }
 
-    public async Task<IActionResult> MyDonations()
+    public async Task<IActionResult> MyDonations(string filter = "all")
     {
         var user = await _userManager.GetUserAsync(User);
 
@@ -243,14 +243,28 @@ public class ProfileController : Controller
             return Challenge();
         }
 
-        var donations = await _context.Contributions
+        var query = _context.Contributions
             .AsNoTracking()
             .Include(contribution => contribution.FundingCampaign)
             .Where(contribution => contribution.ContributorUserId == user.Id)
+            .AsQueryable();
+
+        query = filter switch
+        {
+            "active" => query.Where(contribution =>
+                contribution.Frequency != ContributionFrequency.OneTime &&
+                contribution.Status == ContributionStatus.Successful),
+            "recurring" => query.Where(contribution => contribution.Frequency != ContributionFrequency.OneTime),
+            "hidden" => query.Where(contribution => contribution.IsDonationHidden),
+            _ => query
+        };
+
+        var donations = await query
             .OrderByDescending(contribution => contribution.DonatedOn)
             .ThenByDescending(contribution => contribution.Id)
             .ToListAsync();
 
+        ViewBag.Filter = filter;
         return View(donations);
     }
 
@@ -283,29 +297,47 @@ public class ProfileController : Controller
         return RedirectToAction(nameof(MyDonations));
     }
 
-    [Authorize(Roles = ApplicationRoles.Administrator)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CancelRecurringDonation(int id, CampaignCategory? category, ContributionFrequency? frequency, string status = "successful", string dateRange = "lifetime")
     {
-        var donation = await _context.Contributions.FindAsync(id);
+        var user = await _userManager.GetUserAsync(User);
+
+        if (user is null)
+        {
+            return Challenge();
+        }
+
+        var isAdmin = User.IsInRole(ApplicationRoles.Administrator);
+        var donation = await _context.Contributions
+            .Include(contribution => contribution.FundingCampaign)
+            .FirstOrDefaultAsync(contribution => contribution.Id == id);
 
         if (donation is null)
         {
             return NotFound();
         }
 
+        if (!isAdmin && donation.ContributorUserId != user.Id)
+        {
+            return Forbid();
+        }
+
         if (donation.Frequency == ContributionFrequency.OneTime)
         {
             TempData["StatusMessage"] = "Only weekly or monthly donations can be cancelled.";
-            return RedirectToAction(nameof(Financial), new { category, frequency, status, dateRange });
+            return isAdmin
+                ? RedirectToAction(nameof(Financial), new { category, frequency, status, dateRange })
+                : RedirectToAction(nameof(MyDonations));
         }
 
         donation.Status = ContributionStatus.Cancelled;
         await _context.SaveChangesAsync();
 
         TempData["StatusMessage"] = "Recurring donation cancelled.";
-        return RedirectToAction(nameof(Financial), new { category, frequency, status, dateRange });
+        return isAdmin
+            ? RedirectToAction(nameof(Financial), new { category, frequency, status, dateRange })
+            : RedirectToAction(nameof(MyDonations));
     }
 
     public async Task<IActionResult> Financial(CampaignCategory? category, ContributionFrequency? frequency, string status = "successful", string dateRange = "lifetime")

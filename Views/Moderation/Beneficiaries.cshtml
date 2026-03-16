@@ -1,0 +1,80 @@
+@model AdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Moderation beneficiaries";
+    var currentSearch = ViewBag.Search as string;
+    var currentStatus = ViewBag.Status as string ?? "all";
+}
+
+<section class="content-shell">
+    <div class="section-heading">
+        <h1 class="mb-0">Beneficiaries</h1>
+        <a class="btn btn-primary" asp-controller="Beneficiaries" asp-action="Create">Add beneficiary</a>
+    </div>
+    <partial name="_ModerationNav" />
+
+    <form method="get" class="content-card mt-3">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-8">
+                <label class="form-label" for="search">Search</label>
+                <input class="form-control" id="search" name="search" value="@currentSearch" placeholder="Search beneficiaries" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="status">Filter</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="all" selected="@(currentStatus == "all")">All</option>
+                    <option value="verified" selected="@(currentStatus == "verified")">Verified</option>
+                    <option value="unverified" selected="@(currentStatus == "unverified")">Unverified</option>
+                    <option value="organizations" selected="@(currentStatus == "organizations")">Organizations</option>
+                    <option value="people" selected="@(currentStatus == "people")">People</option>
+                </select>
+            </div>
+        </div>
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Apply</button>
+            <a class="btn btn-outline-dark" asp-action="Beneficiaries">Clear</a>
+        </div>
+    </form>
+
+    @if (!Model.BeneficiaryReviewItems.Any())
+    {
+        <article class="content-card mt-4">
+            <p class="mb-0">There are no beneficiaries to review.</p>
+        </article>
+    }
+    else
+    {
+        <div class="row g-4 mt-1">
+            @foreach (var beneficiary in Model.BeneficiaryReviewItems)
+            {
+                <div class="col-lg-6">
+                    <article class="content-card h-100">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="badge rounded-pill @(beneficiary.IsVerified ? "text-bg-success" : "text-bg-secondary")">
+                                @(beneficiary.IsVerified ? "Verified" : "Unverified")
+                            </span>
+                            <span class="small text-secondary">@beneficiary.Kind</span>
+                        </div>
+                        <h2 class="h4">@beneficiary.FullName</h2>
+                        <p class="text-secondary">@beneficiary.Story</p>
+                        <dl class="row small mb-4">
+                            <dt class="col-sm-4">About</dt>
+                            <dd class="col-sm-8">@beneficiary.FocusArea</dd>
+                            <dt class="col-sm-4">City</dt>
+                            <dd class="col-sm-8">@beneficiary.City</dd>
+                            <dt class="col-sm-4">Manager</dt>
+                            <dd class="col-sm-8">@(beneficiary.ManagerUser?.Email ?? "-")</dd>
+                        </dl>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a class="btn btn-outline-dark" asp-controller="Beneficiaries" asp-action="Details" asp-route-id="@beneficiary.Id">View</a>
+                            <a class="btn btn-outline-dark" asp-controller="Beneficiaries" asp-action="Edit" asp-route-id="@beneficiary.Id">Edit</a>
+                            <a class="btn btn-primary" asp-controller="Beneficiaries" asp-action="Verify" asp-route-id="@beneficiary.Id" asp-route-returnUrl="@Url.Action("Beneficiaries", "Moderation")">
+                                @(beneficiary.IsVerified ? "Set unverified" : "Verify beneficiary")
+                            </a>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    }
+</section>

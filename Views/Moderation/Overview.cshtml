@@ -1,0 +1,66 @@
+@model AdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Moderation";
+}
+
+<section class="content-shell">
+    <div class="section-heading">
+        <h1 class="mb-0">Moderation</h1>
+    </div>
+    <partial name="_ModerationNav" />
+
+    <div class="row g-4 mt-1">
+        <div class="col-md-6 col-xl-3">
+            <article class="content-card h-100">
+                <span class="impact-label">Users</span>
+                <strong class="dashboard-number">@Model.TotalUsers</strong>
+            </article>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <article class="content-card h-100">
+                <span class="impact-label">Beneficiaries</span>
+                <strong class="dashboard-number">@Model.TotalBeneficiaries</strong>
+            </article>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <article class="content-card h-100">
+                <span class="impact-label">Campaigns</span>
+                <strong class="dashboard-number">@Model.TotalCampaigns</strong>
+            </article>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <article class="content-card h-100">
+                <span class="impact-label">Raised total</span>
+                <strong class="dashboard-number">@CurrencyFormatter.Euro(Model.TotalRaised)</strong>
+            </article>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-4">
+        <div class="col-md-6 col-xl-3">
+            <article class="content-card h-100">
+                <span class="impact-label">Pending campaigns</span>
+                <strong class="dashboard-number">@Model.PendingCampaigns</strong>
+            </article>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <article class="content-card h-100">
+                <span class="impact-label">Approved campaigns</span>
+                <strong class="dashboard-number">@Model.ApprovedCampaigns.Count</strong>
+            </article>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <article class="content-card h-100">
+                <span class="impact-label">Deletion requests</span>
+                <strong class="dashboard-number">@Model.DeletionRequestCampaigns.Count</strong>
+            </article>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <article class="content-card h-100">
+                <span class="impact-label">Latest donations</span>
+                <strong class="dashboard-number">@Model.LatestDonations.Count</strong>
+            </article>
+        </div>
+    </div>
+</section>

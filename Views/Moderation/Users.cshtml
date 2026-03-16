@@ -1,0 +1,62 @@
+@model AdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Moderation users";
+}
+
+<section class="content-shell">
+    <div class="section-heading">
+        <h1 class="mb-0">Users</h1>
+    </div>
+    <partial name="_ModerationNav" />
+
+    <form method="get" class="content-card mt-3">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-8">
+                <label class="form-label" for="userSearch">Search</label>
+                <input class="form-control" id="userSearch" name="userSearch" value="@ViewBag.UserSearch" placeholder="Search users" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="userRole">Role</label>
+                <select class="form-select" id="userRole" name="userRole">
+                    <option value="all" selected="@((ViewBag.UserRole as string ?? "all") == "all")">All</option>
+                    <option value="admins" selected="@((ViewBag.UserRole as string ?? "all") == "admins")">Admins</option>
+                    <option value="users" selected="@((ViewBag.UserRole as string ?? "all") == "users")">Users</option>
+                </select>
+            </div>
+        </div>
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Apply</button>
+            <a class="btn btn-outline-dark" asp-action="Users">Clear</a>
+        </div>
+    </form>
+
+    <div class="table-responsive mt-3">
+        <table class="table admin-table align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Created campaigns</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Users)
+                {
+                    <tr>
+                        <td>@user.FullName</td>
+                        <td>@user.Email</td>
+                        <td>@(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "-" : user.PhoneNumber)</td>
+                        <td>@user.CreatedCampaigns.Count</td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-dark" asp-action="UserDetails" asp-route-id="@user.Id">Details</a>
+                            <a class="btn btn-sm btn-outline-dark" asp-action="EditUser" asp-route-id="@user.Id">Edit user</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

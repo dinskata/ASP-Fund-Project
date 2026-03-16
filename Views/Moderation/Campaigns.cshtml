@@ -1,0 +1,144 @@
+@model AdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Moderation campaigns";
+    var currentSearch = ViewBag.Search as string;
+    var currentStatus = ViewBag.Status as string ?? "all";
+}
+
+<section class="content-shell">
+    <div class="section-heading">
+        <h1 class="mb-0">Campaigns</h1>
+    </div>
+    <partial name="_ModerationNav" />
+
+    <form method="get" class="content-card mt-3">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-8">
+                <label class="form-label" for="search">Search</label>
+                <input class="form-control" id="search" name="search" value="@currentSearch" placeholder="Search campaigns" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="status">Filter</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="all" selected="@(currentStatus == "all")">All</option>
+                    <option value="pending" selected="@(currentStatus == "pending")">Pending</option>
+                    <option value="approved" selected="@(currentStatus == "approved")">Approved</option>
+                    <option value="featured" selected="@(currentStatus == "featured")">Featured</option>
+                    <option value="deletion" selected="@(currentStatus == "deletion")">Deletion requests</option>
+                </select>
+            </div>
+        </div>
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Apply</button>
+            <a class="btn btn-outline-dark" asp-action="Campaigns">Clear</a>
+        </div>
+    </form>
+
+    <div class="section-heading mt-4">
+        <h2 class="h3 mb-0">Deletion requests</h2>
+    </div>
+    @if (!Model.DeletionRequestCampaigns.Any())
+    {
+        <article class="content-card mt-4">
+            <p class="mb-0">There are no deletion requests right now.</p>
+        </article>
+    }
+    else
+    {
+        <div class="row g-4 mt-1">
+            @foreach (var campaign in Model.DeletionRequestCampaigns)
+            {
+                <div class="col-lg-6">
+                    <article class="content-card h-100">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="badge rounded-pill text-bg-danger">Deletion requested</span>
+                            <span class="small text-secondary">Owner @campaign.Owner?.FullName</span>
+                        </div>
+                        <h2 class="h4">@campaign.Title</h2>
+                        <p class="text-secondary">@campaign.Summary</p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a class="btn btn-outline-dark" asp-controller="Campaigns" asp-action="Details" asp-route-id="@campaign.Id">View</a>
+                            <form asp-action="ToggleCampaignHidden" method="post">
+                                <input type="hidden" name="id" value="@campaign.Id" />
+                                <button type="submit" class="btn btn-outline-dark">@(campaign.IsHidden ? "Show campaign" : "Hide campaign")</button>
+                            </form>
+                            <form asp-action="ApproveDeletion" method="post">
+                                <input type="hidden" name="id" value="@campaign.Id" />
+                                <button type="submit" class="btn btn-danger">Approve deletion</button>
+                            </form>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="section-heading mt-5">
+        <h2 class="h3 mb-0">Pending campaigns</h2>
+    </div>
+    @if (!Model.PendingApprovalCampaigns.Any())
+    {
+        <article class="content-card mt-4">
+            <p class="mb-0">There are no campaigns waiting for approval.</p>
+        </article>
+    }
+    else
+    {
+        <div class="row g-4 mt-1">
+            @foreach (var campaign in Model.PendingApprovalCampaigns)
+            {
+                <div class="col-lg-6">
+                    <article class="content-card h-100">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="badge rounded-pill text-bg-secondary">Pending approval</span>
+                            <span class="small text-secondary">Submitted @DateFormatter.EnglishShort(campaign.CreatedOn)</span>
+                        </div>
+                        <h2 class="h4">@campaign.Title</h2>
+                        <p class="text-secondary">@campaign.Summary</p>
+                        <dl class="row small mb-4">
+                            <dt class="col-sm-4">Owner</dt>
+                            <dd class="col-sm-8">@campaign.Owner?.FullName</dd>
+                            <dt class="col-sm-4">Beneficiary</dt>
+                            <dd class="col-sm-8">@campaign.Beneficiary?.FullName</dd>
+                            <dt class="col-sm-4">Goal</dt>
+                            <dd class="col-sm-8">@CurrencyFormatter.Euro(campaign.GoalAmount)</dd>
+                        </dl>
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-outline-dark" asp-controller="Campaigns" asp-action="Details" asp-route-id="@campaign.Id">View</a>
+                            <a class="btn btn-primary" asp-controller="Campaigns" asp-action="Approve" asp-route-id="@campaign.Id" asp-route-returnUrl="@Url.Action("Campaigns", "Moderation")">Approve campaign</a>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="section-heading mt-5">
+        <h2 class="h3 mb-0">Approved campaigns</h2>
+    </div>
+    <div class="row g-4 mt-1">
+        @foreach (var campaign in Model.ApprovedCampaigns)
+        {
+            <div class="col-lg-6">
+                <article class="content-card h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="badge rounded-pill @(campaign.IsFeatured ? "text-bg-warning" : "text-bg-light border")">
+                            @(campaign.IsFeatured ? "Featured" : "Standard")
+                        </span>
+                        <span class="small text-secondary">Ends @DateFormatter.EnglishShort(campaign.EndDate)</span>
+                    </div>
+                    <h3 class="h4">@campaign.Title</h3>
+                    <p class="text-secondary">@campaign.Summary</p>
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-outline-dark" asp-controller="Campaigns" asp-action="Edit" asp-route-id="@campaign.Id">Edit</a>
+                        <form asp-action="ToggleFeatured" method="post">
+                            <input type="hidden" name="id" value="@campaign.Id" />
+                            <button type="submit" class="btn btn-primary">@(campaign.IsFeatured ? "Remove featured" : "Make featured")</button>
+                        </form>
+                    </div>
+                </article>
+            </div>
+        }
+    </div>
+</section>

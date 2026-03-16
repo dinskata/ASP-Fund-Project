@@ -315,6 +315,7 @@
                         <td>@(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "-" : user.PhoneNumber)</td>
                         <td>@user.CreatedCampaigns.Count</td>
                         <td>
+                            <a class="btn btn-sm btn-outline-dark" asp-action="UserDetails" asp-route-id="@user.Id">Details</a>
                             <a class="btn btn-sm btn-outline-dark" asp-action="EditUser" asp-route-id="@user.Id">Edit user</a>
                         </td>
                     </tr>
